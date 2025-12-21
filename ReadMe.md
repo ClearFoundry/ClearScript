@@ -67,11 +67,11 @@ Platform-specific V8 libraries.
 | macOS | [![ClearScript.V8.Native.osx-x64](https://img.shields.io/nuget/v/Microsoft.ClearScript.V8.Native.osx-x64?label=macOS%20(x64)&logo=V8&logoColor=white)](https://www.nuget.org/packages/Microsoft.ClearScript.V8.Native.osx-x64) [![ClearScript.V8.Native.osx-arm64](https://img.shields.io/nuget/v/Microsoft.ClearScript.V8.Native.osx-arm64?label=macOS%20(arm64)&logo=V8&logoColor=white)](https://www.nuget.org/packages/Microsoft.ClearScript.V8.Native.osx-arm64) |
 
 # Documentation
-* [Main Site / Blog](https://microsoft.github.io/ClearScript/)
-* [Examples](https://microsoft.github.io/ClearScript/Examples/Examples.html)
-* [Tutorial](https://microsoft.github.io/ClearScript/Tutorial/FAQtorial.html)
-* [API reference](https://microsoft.github.io/ClearScript/Reference/index.html)
-* [Building, integrating, and deploying ClearScript](https://microsoft.github.io/ClearScript/Details/Build.html)
+* [Main Site / Blog](https://clearfoundry.github.io/ClearScript/)
+* [Examples](https://clearfoundry.github.io/ClearScript/Examples/Examples.html)
+* [Tutorial](https://clearfoundry.github.io/ClearScript/Tutorial/FAQtorial.html)
+* [API reference](https://clearfoundry.github.io/ClearScript/Reference/index.html)
+* [Building, integrating, and deploying ClearScript](https://clearfoundry.github.io/ClearScript/Details/Build.html)
 
 # Acknowledgments
 We'd like to thank:
