@@ -25,6 +25,7 @@ public:
 
     const StdString& GetName() const { return m_Name; }
     const Persistent<v8::Context>& GetContext() const { return m_hContext; }
+    void NotifyPromiseRejection(int32_t operation, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hReason);
 
     virtual size_t GetMaxIsolateHeapSize() override;
     virtual void SetMaxIsolateHeapSize(size_t value) override;
@@ -574,6 +575,7 @@ private:
     bool m_AllowHostObjectConstructorCall;
     bool m_ChangedTimerResolution;
     void* m_pvV8ObjectCache;
+    void* m_pvPromiseRejectionCallback;
     double m_RelativeTimeOrigin;
 };
 

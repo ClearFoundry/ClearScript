@@ -386,6 +386,14 @@ namespace Microsoft.ClearScript.V8.SplitProxy
         );
 
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void RawNotifyPromiseRejection(
+            [In] IntPtr pCallback,
+            [In] int operation,
+            [In] V8Value.Ptr pPromise,
+            [In] V8Value.Ptr pReason
+        );
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate IntPtr RawCreateNativeCallbackTimer(
             [In] int dueTime,
             [In] int period,
@@ -566,6 +574,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 GetMethodPair<RawAsyncDisposeFastHostObject>(AsyncDisposeFastHostObject),
 
                 GetMethodPair<RawQueueNativeCallback>(QueueNativeCallback),
+                GetMethodPair<RawNotifyPromiseRejection>(NotifyPromiseRejection),
                 GetMethodPair<RawCreateNativeCallbackTimer>(CreateNativeCallbackTimer),
                 GetMethodPair<RawChangeNativeCallbackTimer>(ChangeNativeCallbackTimer),
                 GetMethodPair<RawDestroyNativeCallbackTimer>(DestroyNativeCallbackTimer),
@@ -1168,6 +1177,15 @@ namespace Microsoft.ClearScript.V8.SplitProxy
         private static void QueueNativeCallback(NativeCallback.Handle hCallback)
         {
             MiscHelpers.QueueNativeCallback(new NativeCallbackImpl(hCallback));
+        }
+
+        private static void NotifyPromiseRejection(IntPtr pCallback, int operation, V8Value.Ptr pPromise, V8Value.Ptr pReason)
+        {
+            MiscHelpers.Try(() => V8ProxyHelpers.GetHostObject<Action<V8PromiseRejectionOperation, object, object>>(pCallback)(
+                (V8PromiseRejectionOperation)operation,
+                V8Value.Get(pPromise),
+                V8Value.Get(pReason)
+            ));
         }
 
         private static IntPtr CreateNativeCallbackTimer(int dueTime, int period, NativeCallback.Handle hCallback)

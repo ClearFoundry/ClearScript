@@ -770,7 +770,7 @@ NATIVE_ENTRY_POINT(V8IsolateHandle*) V8Isolate_Create(const StdString& name, int
 
 //-----------------------------------------------------------------------------
 
-NATIVE_ENTRY_POINT(V8ContextHandle*) V8Isolate_CreateContext(const V8IsolateHandle& handle, const StdString& name, V8Context::Flags flags, int32_t debugPort) noexcept
+NATIVE_ENTRY_POINT(V8ContextHandle*) V8Isolate_CreateContext(const V8IsolateHandle& handle, const StdString& name, V8Context::Flags flags, int32_t debugPort, void* pvPromiseRejectionCallback) noexcept
 {
     auto spIsolate = handle.GetEntity();
     if (!spIsolate.IsEmpty())
@@ -778,13 +778,21 @@ NATIVE_ENTRY_POINT(V8ContextHandle*) V8Isolate_CreateContext(const V8IsolateHand
         V8Context::Options options;
         options.Flags = flags;
         options.DebugPort = debugPort;
+        options.pvPromiseRejectionCallback = (pvPromiseRejectionCallback != nullptr) ? HostObjectUtil::AddRef(pvPromiseRejectionCallback) : nullptr;
 
         try
         {
-            return new V8ContextHandle(V8Context::Create(spIsolate, name, options));
+            auto pContext = V8Context::Create(spIsolate, name, options);
+            options.pvPromiseRejectionCallback = nullptr;
+            return new V8ContextHandle(pContext);
         }
         catch (const V8Exception& exception)
         {
+            if (options.pvPromiseRejectionCallback != nullptr)
+            {
+                HostObjectUtil::Release(options.pvPromiseRejectionCallback);
+            }
+
             exception.ScheduleScriptEngineException();
         }
     }

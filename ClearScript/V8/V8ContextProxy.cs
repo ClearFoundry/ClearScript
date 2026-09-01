@@ -9,9 +9,9 @@ namespace Microsoft.ClearScript.V8
 {
     internal abstract class V8ContextProxy : V8Proxy
     {
-        public static V8ContextProxy Create(V8IsolateProxy isolateProxy, string name, V8ScriptEngineFlags flags, int debugPort)
+        public static V8ContextProxy Create(V8IsolateProxy isolateProxy, string name, V8ScriptEngineFlags flags, int debugPort, Action<V8PromiseRejectionOperation, object, object> promiseRejectionCallback)
         {
-            return new V8ContextProxyImpl(isolateProxy, name, flags, debugPort);
+            return new V8ContextProxyImpl(isolateProxy, name, flags, debugPort, promiseRejectionCallback);
         }
 
         public abstract UIntPtr MaxIsolateHeapSize { get; set; }

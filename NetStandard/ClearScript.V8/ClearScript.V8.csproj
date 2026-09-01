@@ -97,6 +97,7 @@
         <Compile Include="..\..\ClearScript\V8\V8Runtime.cs" Link="V8\V8Runtime.cs" />
         <Compile Include="..\..\ClearScript\V8\V8RuntimeConstraints.cs" Link="V8\V8RuntimeConstraints.cs" />
         <Compile Include="..\..\ClearScript\V8\V8RuntimeDebuggerEventArgs.cs" Link="V8\V8RuntimeDebuggerEventArgs.cs" />
+        <Compile Include="..\..\ClearScript\V8\V8PromiseRejectionEventArgs.cs" Link="V8\V8PromiseRejectionEventArgs.cs" />
         <Compile Include="..\..\ClearScript\V8\V8RuntimeFlags.cs" Link="V8\V8RuntimeFlags.cs" />
         <Compile Include="..\..\ClearScript\V8\V8RuntimeHeapInfo.cs" Link="V8\V8RuntimeHeapInfo.cs" />
         <Compile Include="..\..\ClearScript\V8\V8Script.cs" Link="V8\V8Script.cs" />

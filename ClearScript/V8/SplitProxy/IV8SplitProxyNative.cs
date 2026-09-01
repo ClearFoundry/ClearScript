@@ -136,7 +136,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
         #region V8 isolate methods
 
         V8Isolate.Handle V8Isolate_Create(string name, int maxNewSpaceSize, int maxOldSpaceSize, double heapExpansionMultiplier, ulong maxArrayBufferAllocation, V8RuntimeFlags flags, int debugPort);
-        V8Context.Handle V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort);
+        V8Context.Handle V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort, IntPtr pPromiseRejectionCallback);
         UIntPtr V8Isolate_GetMaxHeapSize(V8Isolate.Handle hIsolate);
         void V8Isolate_SetMaxHeapSize(V8Isolate.Handle hIsolate, UIntPtr size);
         double V8Isolate_GetHeapSizeSampleInterval(V8Isolate.Handle hIsolate);

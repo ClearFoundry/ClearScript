@@ -38,6 +38,7 @@ public:
     {
         Flags Flags = Flags::None;
         int DebugPort = 0;
+        void* pvPromiseRejectionCallback = nullptr;
     };
 
     struct Statistics final
