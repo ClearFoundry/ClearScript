@@ -60,6 +60,139 @@ namespace Microsoft.ClearScript.Test
         // ReSharper disable InconsistentNaming
 
         [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_RejectWithNoHandler()
+        {
+            var notifications = new List<V8PromiseRejectionEventArgs>();
+            engine.PromiseRejection += (_, args) => notifications.Add(args);
+
+            engine.Execute("promise = Promise.reject('failure'); isOriginalPromise = value => value === promise");
+
+            Assert.AreEqual(1, notifications.Count);
+            Assert.AreEqual(V8PromiseRejectionOperation.RejectWithNoHandler, notifications[0].Operation);
+            Assert.IsTrue((bool)engine.Script.isOriginalPromise(notifications[0].Promise));
+            Assert.AreEqual("failure", notifications[0].Reason);
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_HandledImmediately()
+        {
+            var notifications = new List<V8PromiseRejectionEventArgs>();
+            engine.PromiseRejection += (_, args) => notifications.Add(args);
+
+            engine.Execute("promise = Promise.reject('failure'); promise.catch(() => {}); samePromise = (left, right) => left === right");
+
+            Assert.AreEqual(2, notifications.Count);
+            Assert.AreEqual(V8PromiseRejectionOperation.RejectWithNoHandler, notifications[0].Operation);
+            Assert.AreEqual(V8PromiseRejectionOperation.HandlerAddedAfterReject, notifications[1].Operation);
+            Assert.IsTrue((bool)engine.Script.samePromise(notifications[0].Promise, notifications[1].Promise));
+            Assert.AreEqual("failure", notifications[1].Reason);
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_HandlerAddedAfterReject()
+        {
+            var notifications = new List<V8PromiseRejectionEventArgs>();
+            engine.PromiseRejection += (_, args) => notifications.Add(args);
+
+            engine.Execute("promise = Promise.reject(123); samePromise = (left, right) => left === right");
+            Assert.AreEqual(1, notifications.Count);
+
+            engine.Execute("promise.catch(() => {})");
+
+            Assert.AreEqual(2, notifications.Count);
+            Assert.AreEqual(V8PromiseRejectionOperation.RejectWithNoHandler, notifications[0].Operation);
+            Assert.AreEqual(V8PromiseRejectionOperation.HandlerAddedAfterReject, notifications[1].Operation);
+            Assert.IsTrue((bool)engine.Script.samePromise(notifications[0].Promise, notifications[1].Promise));
+            Assert.AreEqual(123, notifications[1].Reason);
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_AsyncFunction()
+        {
+            V8PromiseRejectionEventArgs notification = null;
+            engine.PromiseRejection += (_, args) => notification = args;
+
+            engine.Execute("stringify = value => String(value); void (async () => { throw new Error('async failure'); })()");
+
+            Assert.IsNotNull(notification);
+            Assert.AreEqual(V8PromiseRejectionOperation.RejectWithNoHandler, notification.Operation);
+            Assert.AreEqual("Error: async failure", engine.Script.stringify(notification.Reason));
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_PromiseIdentity()
+        {
+            V8PromiseRejectionEventArgs notification = null;
+            engine.PromiseRejection += (_, args) => notification = args;
+
+            engine.Execute("promise = Promise.reject('failure'); validatePromise = value => (value instanceof Promise) && (value === promise)");
+
+            Assert.IsTrue((bool)engine.Script.validatePromise(notification.Promise));
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_Reasons()
+        {
+            var notifications = new List<V8PromiseRejectionEventArgs>();
+            engine.PromiseRejection += (_, args) => notifications.Add(args);
+
+            engine.Execute("objectReason = { value: 456 }; isObjectReason = value => value === objectReason; Promise.reject(123); Promise.reject(objectReason)");
+
+            Assert.AreEqual(2, notifications.Count);
+            Assert.AreEqual(123, notifications[0].Reason);
+            Assert.IsTrue((bool)engine.Script.isObjectReason(notifications[1].Reason));
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_SharedRuntimeRouting()
+        {
+            using (var runtime = new V8Runtime())
+            using (var engine1 = runtime.CreateScriptEngine())
+            using (var engine2 = runtime.CreateScriptEngine())
+            {
+                var notifications1 = new List<V8PromiseRejectionEventArgs>();
+                var notifications2 = new List<V8PromiseRejectionEventArgs>();
+                engine1.PromiseRejection += (_, args) => notifications1.Add(args);
+                engine2.PromiseRejection += (_, args) => notifications2.Add(args);
+
+                engine1.Execute("Promise.reject('engine 1')");
+                Assert.AreEqual(1, notifications1.Count);
+                Assert.AreEqual(0, notifications2.Count);
+
+                engine2.Execute("Promise.reject('engine 2')");
+                Assert.AreEqual(1, notifications1.Count);
+                Assert.AreEqual(1, notifications2.Count);
+                Assert.AreEqual("engine 1", notifications1[0].Reason);
+                Assert.AreEqual("engine 2", notifications2[0].Reason);
+            }
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_DisposalWithPendingTask()
+        {
+            var source = new TaskCompletionSource<object>();
+
+            using (var runtime = new V8Runtime())
+            {
+                var tempEngine = runtime.CreateScriptEngine(V8ScriptEngineFlags.EnableTaskPromiseConversion);
+                tempEngine.AddHostObject("getTask", new Func<Task<object>>(() => source.Task));
+                tempEngine.Execute("void getTask()");
+
+                source.SetException(new InvalidOperationException("task failure"));
+                tempEngine.Dispose();
+            }
+
+            Thread.Sleep(100);
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejection_NoSubscriber()
+        {
+            engine.Execute("for (let index = 0; index < 100; index++) Promise.reject(index)");
+            engine.CollectGarbage(true);
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
         public void V8ScriptEngine_AddHostObject()
         {
             var host = new HostFunctions();

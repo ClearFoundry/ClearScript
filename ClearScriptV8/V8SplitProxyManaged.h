@@ -77,6 +77,7 @@
     V8_SPLIT_PROXY_MANAGED_METHOD(void, AsyncDisposeFastHostObject, void* pvObject, V8Value::FastResult& result) \
     \
     V8_SPLIT_PROXY_MANAGED_METHOD(void, QueueNativeCallback, NativeCallbackHandle* pCallbackHandle) \
+    V8_SPLIT_PROXY_MANAGED_METHOD(void, NotifyPromiseRejection, void* pvCallback, int32_t operation, const V8Value& promise, const V8Value& reason) \
     \
     V8_SPLIT_PROXY_MANAGED_METHOD(void*, CreateNativeCallbackTimer, int32_t dueTime, int32_t period, NativeCallbackHandle* pCallbackHandle) \
     V8_SPLIT_PROXY_MANAGED_METHOD(StdBool, ChangeNativeCallbackTimer, void* pvTimer, int32_t dueTime, int32_t period) \

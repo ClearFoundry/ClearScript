@@ -66,6 +66,7 @@ struct HostObjectUtil final: StaticBase
 
     using NativeCallback = std::function<void()>;
     static void QueueNativeCallback(NativeCallback&& callback);
+    static void NotifyPromiseRejection(void* pvCallback, int32_t operation, const V8Value& promise, const V8Value& reason);
     static void* CreateNativeCallbackTimer(int32_t dueTime, int32_t period, NativeCallback&& callback);
     static bool ChangeNativeCallbackTimer(void* pvTimer, int32_t dueTime, int32_t period);
     static void DestroyNativeCallbackTimer(void* pvTimer);

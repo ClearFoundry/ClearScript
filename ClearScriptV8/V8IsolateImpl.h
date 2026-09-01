@@ -607,6 +607,32 @@ private:
         }
     };
 
+    struct PromiseRejectionEntry final
+    {
+        PROHIBIT_COPY(PromiseRejectionEntry)
+
+        WeakRef<V8Context> wrContext;
+        int32_t Operation;
+        Persistent<v8::Promise> hPromise;
+        Persistent<v8::Value> hReason;
+
+        PromiseRejectionEntry(const WeakRef<V8Context>& wrContextArg, int32_t operation, Persistent<v8::Promise> hPromiseArg, Persistent<v8::Value> hReasonArg):
+            wrContext(wrContextArg),
+            Operation(operation),
+            hPromise(hPromiseArg),
+            hReason(hReasonArg)
+        {
+        }
+
+        ~PromiseRejectionEntry()
+        {
+            hPromise.Dispose();
+            hReason.Dispose();
+        }
+    };
+
+    using PromiseRejectionQueue = std::queue<std::unique_ptr<PromiseRejectionEntry>>;
+
     struct ScriptCacheEntry final
     {
         V8DocumentInfo DocumentInfo;
@@ -658,6 +684,10 @@ private:
     void OnBeforeCallEntered();
 
     static void PromiseHook(v8::PromiseHookType type, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hParent);
+    static void PromiseRejectCallback(v8::PromiseRejectMessage message);
+
+    void QueuePromiseRejection(V8ContextImpl& contextImpl, int32_t operation, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hReason);
+    void ProcessPromiseRejectionQueue();
 
     void FlushContextAsync(v8::Local<v8::Context> hContext);
     void FlushContextAsync(ContextEntry& contextEntry);
@@ -675,8 +705,10 @@ private:
     std::shared_ptr<v8::TaskRunner> m_spForegroundTaskRunner;
     std::vector<std::shared_ptr<v8::Task>> m_AsyncTasks;
     CallWithLockQueue m_CallWithLockQueue;
+    PromiseRejectionQueue m_PromiseRejectionQueue;
     std::condition_variable m_CallWithLockQueueChanged;
     size_t m_CallWithLockLevel;
+    bool m_PromiseRejectionNotificationPending;
     std::vector<SharedPtr<Timer>> m_TaskTimers;
     std::list<ScriptCacheEntry> m_ScriptCache;
     bool m_DebuggingEnabled;

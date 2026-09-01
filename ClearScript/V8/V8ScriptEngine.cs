@@ -232,7 +232,7 @@ namespace Microsoft.ClearScript.V8
             HostItemCollateral = runtime.HostItemCollateral;
 
             Flags = flags;
-            proxy = V8ContextProxy.Create(runtime.IsolateProxy, Name, flags, debugPort);
+            proxy = V8ContextProxy.Create(runtime.IsolateProxy, Name, flags, debugPort, OnPromiseRejection);
             script = (V8ScriptItem)GetRootItem();
 
             if (flags.HasAllFlags(V8ScriptEngineFlags.EnableStringifyEnhancements))
@@ -251,6 +251,21 @@ namespace Microsoft.ClearScript.V8
         #endregion
 
         #region public members
+
+        /// <summary>
+        /// Occurs when V8 reports a promise rejection lifecycle notification for this script engine.
+        /// </summary>
+        /// <remarks>
+        /// <para>
+        /// The event reports V8's embedder-level rejection lifecycle. It does not implement browser
+        /// unhandled-rejection checkpoint semantics.
+        /// </para>
+        /// <para>
+        /// Notifications are delivered in order after the active V8 callback and microtask work have
+        /// unwound. Delivery is serialized with script execution for the containing V8 runtime.
+        /// </para>
+        /// </remarks>
+        public event EventHandler<V8PromiseRejectionEventArgs> PromiseRejection;
 
         /// <summary>
         /// Resumes script execution if the script engine is waiting for a debugger connection.
@@ -1934,6 +1949,18 @@ namespace Microsoft.ClearScript.V8
         }
 
         #endregion
+
+        private void OnPromiseRejection(V8PromiseRejectionOperation operation, object promise, object reason)
+        {
+            if (!disposedFlag.IsSet)
+            {
+                var scriptPromise = MarshalToHost(promise, false) as ScriptObject;
+                if (scriptPromise is not null)
+                {
+                    PromiseRejection?.Invoke(this, new V8PromiseRejectionEventArgs(operation, scriptPromise, MarshalToHost(reason, false)));
+                }
+            }
+        }
 
         #region ScriptEngine overrides (disposal / finalization)
 

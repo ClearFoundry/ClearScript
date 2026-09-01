@@ -476,6 +476,7 @@ static size_t* const s_pMinStackLimit = reinterpret_cast<size_t*>(sizeof(size_t)
 V8IsolateImpl::V8IsolateImpl(const StdString& name, const v8::ResourceConstraints* pConstraints, const Options& options):
     m_Name(name),
     m_CallWithLockLevel(0),
+    m_PromiseRejectionNotificationPending(false),
     m_DebuggingEnabled(false),
     m_MaxArrayBufferAllocation(options.MaxArrayBufferAllocation),
     m_ArrayBufferAllocation(0),
@@ -514,6 +515,7 @@ V8IsolateImpl::V8IsolateImpl(const StdString& name, const v8::ResourceConstraint
 
         m_upIsolate->AddNearHeapLimitCallback(HeapExpansionCallback, this);
         m_upIsolate->AddBeforeCallEnteredCallback(OnBeforeCallEntered);
+        m_upIsolate->SetPromiseRejectCallback(PromiseRejectCallback);
 
         BEGIN_ISOLATE_SCOPE
 
@@ -1641,6 +1643,13 @@ V8IsolateImpl::~V8IsolateImpl()
     BEGIN_ISOLATE_SCOPE
         DisableDebugging();
         ClearScriptCache();
+
+        while (!m_PromiseRejectionQueue.empty())
+        {
+            m_PromiseRejectionQueue.pop();
+        }
+
+        m_PromiseRejectionNotificationPending = false;
     END_ISOLATE_SCOPE
 
     {
@@ -2187,6 +2196,135 @@ void V8IsolateImpl::PromiseHook(v8::PromiseHookType type, v8::Local<v8::Promise>
             GetInstanceFromIsolate(v8::Isolate::GetCurrent())->FlushContextAsync(hContext);
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+
+void V8IsolateImpl::PromiseRejectCallback(v8::PromiseRejectMessage message)
+{
+    try
+    {
+        int32_t operation;
+        switch (message.GetEvent())
+        {
+            case v8::PromiseRejectEvent::kPromiseRejectWithNoHandler:
+                operation = 0;
+                break;
+
+            case v8::PromiseRejectEvent::kPromiseHandlerAddedAfterReject:
+                operation = 1;
+                break;
+
+            default:
+                return;
+        }
+
+        auto hPromise = message.GetPromise();
+        if (hPromise.IsEmpty())
+        {
+            return;
+        }
+
+        auto pIsolate = v8::Isolate::GetCurrent();
+        auto pIsolateImpl = GetInstanceFromIsolate(pIsolate);
+        auto hContext = hPromise->GetCreationContext(pIsolate).FromMaybe(v8::Local<v8::Context>());
+        if (hContext.IsEmpty())
+        {
+            return;
+        }
+
+        auto pContextImpl = pIsolateImpl->FindContext(hContext);
+        if (pContextImpl == nullptr)
+        {
+            return;
+        }
+
+        auto hReason = message.GetValue();
+        if (hReason.IsEmpty() && (hPromise->State() == v8::Promise::PromiseState::kRejected))
+        {
+            hReason = hPromise->Result();
+        }
+
+        pIsolateImpl->QueuePromiseRejection(*pContextImpl, operation, hPromise, hReason);
+    }
+    catch (...)
+    {
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+void V8IsolateImpl::QueuePromiseRejection(V8ContextImpl& contextImpl, int32_t operation, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hReason)
+{
+    _ASSERTE(IsCurrent() && IsLocked());
+
+    auto upEntry = std::make_unique<PromiseRejectionEntry>(
+        contextImpl.CreateWeakRef(),
+        operation,
+        Persistent<v8::Promise>(),
+        Persistent<v8::Value>()
+    );
+
+    upEntry->hPromise = CreatePersistent(hPromise);
+    if (!hReason.IsEmpty())
+    {
+        upEntry->hReason = CreatePersistent(hReason);
+    }
+
+    m_PromiseRejectionQueue.push(std::move(upEntry));
+
+    if (!m_PromiseRejectionNotificationPending)
+    {
+        m_PromiseRejectionNotificationPending = true;
+        try
+        {
+            CallWithLockAsync(true, [] (V8IsolateImpl* pIsolateImpl)
+            {
+                pIsolateImpl->ProcessPromiseRejectionQueue();
+            });
+        }
+        catch (...)
+        {
+            while (!m_PromiseRejectionQueue.empty())
+            {
+                m_PromiseRejectionQueue.pop();
+            }
+
+            m_PromiseRejectionNotificationPending = false;
+            throw;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+void V8IsolateImpl::ProcessPromiseRejectionQueue()
+{
+    _ASSERTE(IsCurrent() && IsLocked());
+
+    while (!m_PromiseRejectionQueue.empty())
+    {
+        auto upEntry = std::move(m_PromiseRejectionQueue.front());
+        m_PromiseRejectionQueue.pop();
+
+        auto spContext = upEntry->wrContext.GetTarget();
+        if (!spContext.IsEmpty())
+        {
+            try
+            {
+                spContext.DerefAs<V8ContextImpl>().NotifyPromiseRejection(
+                    upEntry->Operation,
+                    CreateLocal(upEntry->hPromise),
+                    !upEntry->hReason.IsEmpty() ? CreateLocal(upEntry->hReason) : v8::Local<v8::Value>()
+                );
+            }
+            catch (...)
+            {
+            }
+        }
+    }
+
+    m_PromiseRejectionNotificationPending = false;
 }
 
 //-----------------------------------------------------------------------------

@@ -265,6 +265,13 @@ void HostObjectUtil::QueueNativeCallback(NativeCallback&& callback)
 
 //-----------------------------------------------------------------------------
 
+void HostObjectUtil::NotifyPromiseRejection(void* pvCallback, int32_t operation, const V8Value& promise, const V8Value& reason)
+{
+    V8_SPLIT_PROXY_MANAGED_INVOKE_VOID_NOTHROW(NotifyPromiseRejection, pvCallback, operation, promise, reason);
+}
+
+//-----------------------------------------------------------------------------
+
 void* HostObjectUtil::CreateNativeCallbackTimer(int32_t dueTime, int32_t period, NativeCallback&& callback)
 {
     return V8_SPLIT_PROXY_MANAGED_INVOKE_NOTHROW(void*, CreateNativeCallbackTimer, dueTime, period, new NativeCallbackHandle(new NativeCallback(std::move(callback))));

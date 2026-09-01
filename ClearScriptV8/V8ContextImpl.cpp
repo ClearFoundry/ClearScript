@@ -389,7 +389,8 @@ V8ContextImpl::V8ContextImpl(SharedPtr<V8IsolateImpl>&& spIsolateImpl, const Std
     m_HideHostExceptions(::HasFlag(options.Flags, Flags::HideHostExceptions)),
     m_AllowHostObjectConstructorCall(false),
     m_ChangedTimerResolution(false),
-    m_pvV8ObjectCache(nullptr)
+    m_pvV8ObjectCache(nullptr),
+    m_pvPromiseRejectionCallback(options.pvPromiseRejectionCallback)
 {
     VerifyNotOutOfMemory();
 
@@ -603,6 +604,22 @@ V8ContextImpl::V8ContextImpl(SharedPtr<V8IsolateImpl>&& spIsolateImpl, const Std
 size_t V8ContextImpl::GetInstanceCount()
 {
     return s_InstanceCount;
+}
+
+//-----------------------------------------------------------------------------
+
+void V8ContextImpl::NotifyPromiseRejection(int32_t operation, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hReason)
+{
+    if (m_pvPromiseRejectionCallback != nullptr)
+    {
+        BEGIN_CONTEXT_SCOPE
+
+            auto promise = ExportValue(hPromise);
+            auto reason = hReason.IsEmpty() ? V8Value(V8Value::Undefined) : ExportValue(hReason);
+            HostObjectUtil::NotifyPromiseRejection(m_pvPromiseRejectionCallback, operation, promise, reason);
+
+        END_CONTEXT_SCOPE
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -2220,6 +2237,12 @@ void V8ContextImpl::Teardown()
     _ASSERTE(m_spIsolateImpl->IsCurrent() && m_spIsolateImpl->IsLocked());
 
     m_spIsolateImpl->RemoveContext(this);
+
+    if (m_pvPromiseRejectionCallback != nullptr)
+    {
+        HostObjectUtil::Release(m_pvPromiseRejectionCallback);
+        m_pvPromiseRejectionCallback = nullptr;
+    }
 
     if (m_pvV8ObjectCache != nullptr)
     {

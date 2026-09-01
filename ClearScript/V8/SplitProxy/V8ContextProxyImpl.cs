@@ -14,9 +14,15 @@ namespace Microsoft.ClearScript.V8.SplitProxy
 
         private V8Context.Handle Handle => (V8Context.Handle)holder.Handle;
 
-        public V8ContextProxyImpl(V8IsolateProxy isolateProxy, string name, V8ScriptEngineFlags flags, int debugPort)
+        public V8ContextProxyImpl(V8IsolateProxy isolateProxy, string name, V8ScriptEngineFlags flags, int debugPort, Action<V8PromiseRejectionOperation, object, object> promiseRejectionCallback)
         {
-            holder = new V8EntityHolder("V8 script engine", () => ((V8IsolateProxyImpl)isolateProxy).CreateContext(name, flags, debugPort));
+            holder = new V8EntityHolder("V8 script engine", () =>
+            {
+                using (var callbackScope = V8ProxyHelpers.CreateAddRefHostObjectScope(promiseRejectionCallback))
+                {
+                    return ((V8IsolateProxyImpl)isolateProxy).CreateContext(name, flags, debugPort, callbackScope.Value);
+                }
+            });
         }
 
         #region V8ContextProxy overrides
