@@ -1,5 +1,5 @@
 diff --git a/source/common/putilimp.h b/source/common/putilimp.h
-index 8a8ff5008..20522792f 100644
+index 8a8ff5008..232b84ebf 100644
 --- a/source/common/putilimp.h
 +++ b/source/common/putilimp.h
 @@ -202,6 +202,28 @@ typedef size_t uintptr_t;

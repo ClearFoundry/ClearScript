@@ -651,7 +651,7 @@ namespace Microsoft.ClearScript
         public T flags<T>(params T[] args)
         {
             var type = typeof(T);
-            if (!type.IsFlagsEnum(ScriptEngine.Current))
+            if (!type.IsFlagsEnum(GetEngine()))
             {
                 throw new InvalidOperationException(MiscHelpers.FormatInvariant("{0} is not a flag set type", type.GetFullFriendlyName()));
             }
@@ -1338,7 +1338,7 @@ namespace Microsoft.ClearScript
 
         internal ScriptEngine GetEngine()
         {
-            var activeEngine = ScriptEngine.Current ?? engine;
+            var activeEngine = engine ?? ScriptEngine.Current;
             if (activeEngine is null)
             {
                 throw new InvalidOperationException("Operation requires a script engine");

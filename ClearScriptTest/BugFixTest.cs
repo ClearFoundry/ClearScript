@@ -2052,6 +2052,21 @@ namespace Microsoft.ClearScript.Test
             TestTypedArray<double>("Float64");
         }
 
+        [TestMethod, TestCategory("BugFix")]
+        public void BugFix_V8_ArrayBufferWithStackLimit()
+        {
+            ((V8ScriptEngine)engine).MaxRuntimeStackUsage = new UIntPtr(512 * 1024);
+            engine.Execute("new Int8Array(512 * 1024 * 1024);");
+        }
+
+        [TestMethod, TestCategory("BugFix")]
+        public void BugFix_V8_CollectGarbageWithStackLimit()
+        {
+            ((V8ScriptEngine)engine).MaxRuntimeStackUsage = new UIntPtr(256 * 1024);
+            engine.Evaluate("1 + 1");
+            engine.CollectGarbage(true);
+        }
+
         // ReSharper restore InconsistentNaming
 
         #endregion

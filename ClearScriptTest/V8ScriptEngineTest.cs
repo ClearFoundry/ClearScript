@@ -6041,6 +6041,96 @@ namespace Microsoft.ClearScript.Test
             TestUtil.AssertException<RuntimeBinderException>(() => engine.Evaluate("test.GetNames('', test.Dogs, '')"));
         }
 
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseHook()
+        {
+            var list = new List<(V8PromiseEventKind kind, ScriptObject promise, ScriptObject parent)>();
+            engine.PromiseHook = (kind, promise, parent) => list.Add((kind, promise, parent));
+            engine.Execute(@"
+                var x = Promise.resolve(123);
+                var y = Promise.reject(456);
+                var z = x.then(w => 789);
+            ");
+            
+            Assert.AreEqual(8, list.Count);
+            Assert.AreEqual(V8PromiseEventKind.Created, list[0].kind);
+            Assert.IsNotNull(list[0].promise);
+            Assert.IsNull(list[0].parent);
+            Assert.AreEqual(V8PromiseEventKind.Settled, list[1].kind);
+            Assert.IsNotNull(list[1].promise);
+            Assert.IsNull(list[1].parent);
+            Assert.AreEqual(V8PromiseEventKind.Created, list[2].kind);
+            Assert.IsNotNull(list[2].promise);
+            Assert.IsNull(list[2].parent);
+            Assert.AreEqual(V8PromiseEventKind.Settled, list[3].kind);
+            Assert.IsNotNull(list[3].promise);
+            Assert.IsNull(list[3].parent);
+            Assert.AreEqual(V8PromiseEventKind.Created, list[4].kind);
+            Assert.IsNotNull(list[4].promise);
+            Assert.IsNotNull(list[4].parent);
+            Assert.AreEqual(V8PromiseEventKind.BeforeReaction, list[5].kind);
+            Assert.IsNotNull(list[5].promise);
+            Assert.IsNull(list[5].parent);
+            Assert.AreEqual(V8PromiseEventKind.Settled, list[6].kind);
+            Assert.IsNotNull(list[6].promise);
+            Assert.IsNull(list[6].parent);
+            Assert.AreEqual(V8PromiseEventKind.AfterReaction, list[7].kind);
+            Assert.IsNotNull(list[7].promise);
+            Assert.IsNull(list[7].parent);
+
+            Assert.IsTrue(list[1].promise.Equals(list[0].promise));
+            Assert.IsFalse(list[2].promise.Equals(list[0].promise));
+            Assert.IsFalse(list[3].promise.Equals(list[0].promise));
+            Assert.IsFalse(list[4].promise.Equals(list[0].promise));
+            Assert.IsTrue(list[4].parent.Equals(list[0].promise));
+            Assert.IsTrue(list[5].promise.Equals(list[4].promise));
+            Assert.IsTrue(list[6].promise.Equals(list[4].promise));
+            Assert.IsTrue(list[7].promise.Equals(list[4].promise));
+        }
+
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_PromiseRejectionCallback()
+        {
+            var list = new List<(V8PromiseRejectionEventKind kind, ScriptObject promise, object value)>();
+            engine.PromiseRejectionCallback = (kind, promise, value) => list.Add((kind, promise, value));
+            engine.Execute(@"
+                const promise1 = Promise.reject('reason1');
+                promise1.catch(() => {});
+                new Promise((resolve, reject) => {
+                    resolve('reason2');
+                    reject('ignored1');
+                });
+                let resolvePromise;
+                let rejectPromise;
+                const promise2 = new Promise((resolve, reject) => {
+                    resolvePromise = resolve;
+                    rejectPromise = reject;
+                });
+                promise2.catch(() => {});
+                rejectPromise('reason3');
+                resolvePromise('ignored2');
+            ");
+
+            Assert.AreEqual(4, list.Count);
+            Assert.AreEqual(V8PromiseRejectionEventKind.RejectedWithoutHandler, list[0].kind);
+            Assert.IsNotNull(list[0].promise);
+            Assert.AreEqual("reason1", list[0].value);
+            Assert.AreEqual(V8PromiseRejectionEventKind.HandlerAddedAfterRejection, list[1].kind);
+            Assert.IsNotNull(list[1].promise);
+            Assert.IsNull(list[1].value);
+            Assert.AreEqual(V8PromiseRejectionEventKind.RejectedAfterSettlement, list[2].kind);
+            Assert.IsNotNull(list[2].promise);
+            Assert.AreEqual("ignored1", list[2].value);
+            Assert.AreEqual(V8PromiseRejectionEventKind.ResolvedAfterSettlement, list[3].kind);
+            Assert.IsNotNull(list[3].promise);
+            Assert.AreEqual("ignored2", list[3].value);
+
+            Assert.IsTrue(list[1].promise.Equals(list[0].promise));
+            Assert.IsFalse(list[2].promise.Equals(list[1].promise));
+            Assert.IsFalse(list[3].promise.Equals(list[2].promise));
+            Assert.IsFalse(list[3].promise.Equals(list[0].promise));
+        }
+
         // ReSharper restore InconsistentNaming
 
         #endregion

@@ -9,9 +9,9 @@ namespace Microsoft.ClearScript.V8
 {
     internal abstract class V8ContextProxy : V8Proxy
     {
-        public static V8ContextProxy Create(V8IsolateProxy isolateProxy, string name, V8ScriptEngineFlags flags, int debugPort)
+        public static V8ContextProxy Create(V8IsolateProxy isolateProxy, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
         {
-            return new V8ContextProxyImpl(isolateProxy, name, flags, debugPort);
+            return new V8ContextProxyImpl(isolateProxy, pEngine, name, flags, debugPort);
         }
 
         public abstract UIntPtr MaxIsolateHeapSize { get; set; }
@@ -71,5 +71,9 @@ namespace Microsoft.ClearScript.V8
         public abstract uint CpuProfileSampleInterval { get; set; }
 
         public abstract void WriteIsolateHeapSnapshot(Stream stream);
+
+        public abstract void SetPromiseHookEnabled(bool enabled);
+
+        public abstract void SetPromiseRejectionCallbackEnabled(bool enabled);
     }
 }

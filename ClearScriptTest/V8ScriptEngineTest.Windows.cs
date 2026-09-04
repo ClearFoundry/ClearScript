@@ -785,7 +785,25 @@ namespace Microsoft.ClearScript.Test
             TestUtil.InvokeConsoleTest("V8ScriptEngine_HeapExpansionMultiplier");
         }
 
+        [TestMethod, TestCategory("V8ScriptEngine")]
+        public void V8ScriptEngine_DefaultStackSize()
+        {
+            var count64 = uint.Parse(TestUtil.InvokeConsoleTest("V8ScriptEngine_DefaultStackSize", 64));
+            var count128 = uint.Parse(TestUtil.InvokeConsoleTest("V8ScriptEngine_DefaultStackSize", 128));
+            Assert.IsTrue(IsRoughlyTwice(count128, count64, 0.25));
+        }
+
         // ReSharper restore InconsistentNaming
+
+        #endregion
+
+        #region miscellaneous
+
+        static bool IsRoughlyTwice(uint a, uint b, double tolerance)
+        {
+            double twice = 2.0 * b;
+            return (a >= twice * (1 - tolerance)) && (a <= twice * (1 + tolerance));
+        }
 
         #endregion
     }

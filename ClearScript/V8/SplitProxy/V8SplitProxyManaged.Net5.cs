@@ -301,6 +301,36 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             }
         }
 
+        private static unsafe IntPtr InvokePromiseHookFastMethodPtr
+        {
+            get
+            {
+                [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+                static void Thunk(IntPtr pEngine, V8PromiseEventKind kind, V8Value.Decoded.Ptr pPromise, V8Value.Decoded.Ptr pParent)
+                {
+                    InvokePromiseHook(pEngine, kind, pPromise, pParent);
+                }
+
+                delegate* unmanaged[Stdcall]<IntPtr, V8PromiseEventKind, V8Value.Decoded.Ptr, V8Value.Decoded.Ptr, void> pThunk = &Thunk;
+                return (IntPtr)pThunk;
+            }
+        }
+
+        private static unsafe IntPtr InvokePromiseRejectionCallbackFastMethodPtr
+        {
+            get
+            {
+                [UnmanagedCallersOnly(CallConvs = new[] { typeof(CallConvStdcall) })]
+                static void Thunk(IntPtr pEngine, V8PromiseRejectionEventKind kind, V8Value.Decoded.Ptr pPromise, V8Value.Decoded.Ptr pValue)
+                {
+                    InvokePromiseRejectionCallback(pEngine, kind, pPromise, pValue);
+                }
+
+                delegate* unmanaged[Stdcall]<IntPtr, V8PromiseRejectionEventKind, V8Value.Decoded.Ptr, V8Value.Decoded.Ptr, void> pThunk = &Thunk;
+                return (IntPtr)pThunk;
+            }
+        }
+
         #endregion
     }
 }

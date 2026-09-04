@@ -14,9 +14,9 @@ namespace Microsoft.ClearScript.V8.SplitProxy
 
         private V8Context.Handle Handle => (V8Context.Handle)holder.Handle;
 
-        public V8ContextProxyImpl(V8IsolateProxy isolateProxy, string name, V8ScriptEngineFlags flags, int debugPort)
+        public V8ContextProxyImpl(V8IsolateProxy isolateProxy, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
         {
-            holder = new V8EntityHolder("V8 script engine", () => ((V8IsolateProxyImpl)isolateProxy).CreateContext(name, flags, debugPort));
+            holder = new V8EntityHolder("V8 script engine", () => ((V8IsolateProxyImpl)isolateProxy).CreateContext(name, pEngine, flags, debugPort));
         }
 
         #region V8ContextProxy overrides
@@ -376,6 +376,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 var pStream = streamScope.Value;
                 V8SplitProxyNative.Invoke(static (instance, ctx) => instance.V8Context_WriteIsolateHeapSnapshot(ctx.Handle, ctx.pStream), (Handle, pStream));
             }
+        }
+
+        public override void SetPromiseHookEnabled(bool enabled)
+        {
+            V8SplitProxyNative.Invoke(static (instance, ctx) => instance.V8Context_SetPromiseHookEnabled(ctx.Handle, ctx.enabled), (Handle, enabled));
+        }
+
+        public override void SetPromiseRejectionCallbackEnabled(bool enabled)
+        {
+            V8SplitProxyNative.Invoke(static (instance, ctx) => instance.V8Context_SetPromiseRejectionCallbackEnabled(ctx.Handle, ctx.enabled), (Handle, enabled));
         }
 
         #endregion

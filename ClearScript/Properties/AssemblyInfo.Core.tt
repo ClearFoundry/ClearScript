@@ -43,15 +43,15 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("<#= "ClearScriptTest" + publicKeySpec #>")]
 
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("<#= version.ToString(3) #>")]
-[assembly: AssemblyFileVersion("<#= version.ToString(3) #>")]
-[assembly: AssemblyInformationalVersion("<#= version.ToString(3) + versionSuffix #>")]
+[assembly: AssemblyVersion("<#= versionInfo.Normal #>")]
+[assembly: AssemblyFileVersion("<#= versionInfo.Normal #>")]
+[assembly: AssemblyInformationalVersion("<#= versionInfo.Informational #>")]
 
 namespace Microsoft.ClearScript.Properties
 {
     internal static class ClearScriptVersion
     {
-        public const string Triad = "<#= version.ToString(3) #>";
-        public const string Informational = "<#= version.ToString(3) + versionSuffix #>";
+        public const string Normal = "<#= versionInfo.Normal #>";
+        public const string Informational = "<#= versionInfo.Informational #>";
     }
 }

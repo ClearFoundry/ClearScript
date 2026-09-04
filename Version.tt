@@ -1,5 +1,31 @@
 <#
-    var version = new Version(7, 5, 1);
-    var versionSuffix = "";
-    new Random(versionSuffix.Length); // suppress "versionSuffix not used" warning
+    var versionInfo = new VersionInfo(7, 5, 1, 1, string.Empty);
+#>
+
+<#+
+    public class VersionInfo
+    {
+        public string Normal { get; }
+        public string CommaSeparated { get; }
+        public string Suffix { get; }
+        public string Informational { get; }
+
+        public VersionInfo(int major, int minor, int build, string suffix = "")
+            : this(new Version(major, minor, build), suffix)
+        {
+        }
+
+        public VersionInfo(int major, int minor, int build, int revision, string suffix = "")
+            : this(new Version(major, minor, build, revision), suffix)
+        {
+        }
+
+        private VersionInfo(Version version, string suffix)
+        {
+            Normal = (version.Revision > 0) ? version.ToString() : version.ToString(3);
+            CommaSeparated = (version.Revision > 0) ? $"{version.Major},{version.Minor},{version.Build},{version.Revision}" : $"{version.Major},{version.Minor},{version.Build}";
+            Suffix = suffix;
+            Informational = Normal + Suffix;
+        }
+    }
 #>

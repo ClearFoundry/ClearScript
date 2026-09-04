@@ -572,29 +572,6 @@ private:
     using CallWithLockEntry = std::pair<bool /*allowNesting*/, CallWithLockCallback>;
     using CallWithLockQueue = std::queue<CallWithLockEntry>;
 
-    class PromiseHookScope final
-    {
-        PROHIBIT_COPY(PromiseHookScope)
-        PROHIBIT_HEAP(PromiseHookScope)
-
-    public:
-
-        explicit PromiseHookScope(V8IsolateImpl& isolateImpl) :
-            m_IsolateImpl(isolateImpl)
-        {
-            m_IsolateImpl.m_upIsolate->SetPromiseHook(PromiseHook);
-        }
-
-        ~PromiseHookScope()
-        {
-            m_IsolateImpl.m_upIsolate->SetPromiseHook(nullptr);
-        }
-
-    private:
-
-        V8IsolateImpl& m_IsolateImpl;
-    };
-
     struct ContextEntry final
     {
         V8ContextImpl* pContextImpl;
@@ -654,12 +631,17 @@ private:
     void CheckHeapSize(const std::optional<size_t>& optMaxHeapSize, bool timerTriggered);
     void CollectGarbageInternal(bool exhaustive);
 
+    void SetStackLimit(size_t* pLimit);
+
     static void OnBeforeCallEntered(v8::Isolate* pIsolate);
     void OnBeforeCallEntered();
 
     static void PromiseHook(v8::PromiseHookType type, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hParent);
+    void PromiseHookWorker(v8::PromiseHookType type, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hParent);
 
-    void FlushContextAsync(v8::Local<v8::Context> hContext);
+    static void PromiseRejectionCallback(v8::PromiseRejectMessage message);
+    void PromiseRejectionCallbackWorker(const v8::PromiseRejectMessage& message);
+
     void FlushContextAsync(ContextEntry& contextEntry);
     void FlushContext(V8ContextImpl& contextImpl);
 
@@ -703,6 +685,7 @@ private:
     bool m_IsExecutionTerminating;
     ExecutionScope* m_pExecutionScope;
     const V8DocumentInfo* m_pDocumentInfo;
+    bool m_InternalPromiseHookEnabled;
     std::atomic<bool> m_IsOutOfMemory;
     std::atomic<bool> m_Released;
     Statistics m_Statistics;

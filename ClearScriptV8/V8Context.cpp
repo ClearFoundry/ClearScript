@@ -7,9 +7,9 @@
 // V8Context implementation
 //-----------------------------------------------------------------------------
 
-V8Context* V8Context::Create(const SharedPtr<V8Isolate>& spIsolate, const StdString& name, const Options& options)
+V8Context* V8Context::Create(const SharedPtr<V8Isolate>& spIsolate, void* pvEngine, const StdString& name, const Options& options)
 {
-    return new V8ContextImpl(spIsolate.CastTo<V8IsolateImpl>(), name, options);
+    return new V8ContextImpl(spIsolate.CastTo<V8IsolateImpl>(), pvEngine, name, options);
 }
 
 //-----------------------------------------------------------------------------

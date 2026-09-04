@@ -518,11 +518,11 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 }
             }
 
-            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort)
+            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
             {
                 using (var nameScope = StdString.CreateScope(name))
                 {
-                    return V8Isolate_CreateContext(hIsolate, nameScope.Value, flags, debugPort);
+                    return V8Isolate_CreateContext(hIsolate, pEngine, nameScope.Value, flags, debugPort);
                 }
             }
 
@@ -989,6 +989,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             void IV8SplitProxyNative.V8Context_WriteIsolateHeapSnapshot(V8Context.Handle hContext, IntPtr pStream)
             {
                 V8Context_WriteIsolateHeapSnapshot(hContext, pStream);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseHookEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseHookEnabled(hContext, enabled);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseRejectionCallbackEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseRejectionCallbackEnabled(hContext, enabled);
             }
 
             #endregion
@@ -1660,6 +1670,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             [DllImport("ClearScriptV8.win-x86.dll", CallingConvention = CallingConvention.StdCall)]
             private static extern V8Context.Handle V8Isolate_CreateContext(
                 [In] V8Isolate.Handle hIsolate,
+                [In] IntPtr pEngine,
                 [In] StdString.Ptr pName,
                 [In] V8ScriptEngineFlags flags,
                 [In] int debugPort
@@ -2106,6 +2117,18 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             private static extern void V8Context_WriteIsolateHeapSnapshot(
                 [In] V8Context.Handle hContext,
                 [In] IntPtr pStream
+            );
+
+            [DllImport("ClearScriptV8.win-x86.dll", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseHookEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
+            );
+
+            [DllImport("ClearScriptV8.win-x86.dll", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseRejectionCallbackEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
             );
 
             #endregion
@@ -2725,11 +2748,11 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 }
             }
 
-            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort)
+            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
             {
                 using (var nameScope = StdString.CreateScope(name))
                 {
-                    return V8Isolate_CreateContext(hIsolate, nameScope.Value, flags, debugPort);
+                    return V8Isolate_CreateContext(hIsolate, pEngine, nameScope.Value, flags, debugPort);
                 }
             }
 
@@ -3196,6 +3219,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             void IV8SplitProxyNative.V8Context_WriteIsolateHeapSnapshot(V8Context.Handle hContext, IntPtr pStream)
             {
                 V8Context_WriteIsolateHeapSnapshot(hContext, pStream);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseHookEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseHookEnabled(hContext, enabled);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseRejectionCallbackEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseRejectionCallbackEnabled(hContext, enabled);
             }
 
             #endregion
@@ -3867,6 +3900,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             [DllImport("ClearScriptV8.win-x64.dll", CallingConvention = CallingConvention.StdCall)]
             private static extern V8Context.Handle V8Isolate_CreateContext(
                 [In] V8Isolate.Handle hIsolate,
+                [In] IntPtr pEngine,
                 [In] StdString.Ptr pName,
                 [In] V8ScriptEngineFlags flags,
                 [In] int debugPort
@@ -4313,6 +4347,18 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             private static extern void V8Context_WriteIsolateHeapSnapshot(
                 [In] V8Context.Handle hContext,
                 [In] IntPtr pStream
+            );
+
+            [DllImport("ClearScriptV8.win-x64.dll", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseHookEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
+            );
+
+            [DllImport("ClearScriptV8.win-x64.dll", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseRejectionCallbackEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
             );
 
             #endregion
@@ -4932,11 +4978,11 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 }
             }
 
-            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort)
+            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
             {
                 using (var nameScope = StdString.CreateScope(name))
                 {
-                    return V8Isolate_CreateContext(hIsolate, nameScope.Value, flags, debugPort);
+                    return V8Isolate_CreateContext(hIsolate, pEngine, nameScope.Value, flags, debugPort);
                 }
             }
 
@@ -5403,6 +5449,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             void IV8SplitProxyNative.V8Context_WriteIsolateHeapSnapshot(V8Context.Handle hContext, IntPtr pStream)
             {
                 V8Context_WriteIsolateHeapSnapshot(hContext, pStream);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseHookEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseHookEnabled(hContext, enabled);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseRejectionCallbackEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseRejectionCallbackEnabled(hContext, enabled);
             }
 
             #endregion
@@ -6074,6 +6130,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             [DllImport("ClearScriptV8.win-arm64.dll", CallingConvention = CallingConvention.StdCall)]
             private static extern V8Context.Handle V8Isolate_CreateContext(
                 [In] V8Isolate.Handle hIsolate,
+                [In] IntPtr pEngine,
                 [In] StdString.Ptr pName,
                 [In] V8ScriptEngineFlags flags,
                 [In] int debugPort
@@ -6520,6 +6577,18 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             private static extern void V8Context_WriteIsolateHeapSnapshot(
                 [In] V8Context.Handle hContext,
                 [In] IntPtr pStream
+            );
+
+            [DllImport("ClearScriptV8.win-arm64.dll", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseHookEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
+            );
+
+            [DllImport("ClearScriptV8.win-arm64.dll", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseRejectionCallbackEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
             );
 
             #endregion
@@ -7139,11 +7208,11 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 }
             }
 
-            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort)
+            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
             {
                 using (var nameScope = StdString.CreateScope(name))
                 {
-                    return V8Isolate_CreateContext(hIsolate, nameScope.Value, flags, debugPort);
+                    return V8Isolate_CreateContext(hIsolate, pEngine, nameScope.Value, flags, debugPort);
                 }
             }
 
@@ -7610,6 +7679,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             void IV8SplitProxyNative.V8Context_WriteIsolateHeapSnapshot(V8Context.Handle hContext, IntPtr pStream)
             {
                 V8Context_WriteIsolateHeapSnapshot(hContext, pStream);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseHookEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseHookEnabled(hContext, enabled);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseRejectionCallbackEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseRejectionCallbackEnabled(hContext, enabled);
             }
 
             #endregion
@@ -8281,6 +8360,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             [DllImport("ClearScriptV8.linux-x64.so", CallingConvention = CallingConvention.StdCall)]
             private static extern V8Context.Handle V8Isolate_CreateContext(
                 [In] V8Isolate.Handle hIsolate,
+                [In] IntPtr pEngine,
                 [In] StdString.Ptr pName,
                 [In] V8ScriptEngineFlags flags,
                 [In] int debugPort
@@ -8727,6 +8807,18 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             private static extern void V8Context_WriteIsolateHeapSnapshot(
                 [In] V8Context.Handle hContext,
                 [In] IntPtr pStream
+            );
+
+            [DllImport("ClearScriptV8.linux-x64.so", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseHookEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
+            );
+
+            [DllImport("ClearScriptV8.linux-x64.so", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseRejectionCallbackEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
             );
 
             #endregion
@@ -9346,11 +9438,11 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 }
             }
 
-            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort)
+            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
             {
                 using (var nameScope = StdString.CreateScope(name))
                 {
-                    return V8Isolate_CreateContext(hIsolate, nameScope.Value, flags, debugPort);
+                    return V8Isolate_CreateContext(hIsolate, pEngine, nameScope.Value, flags, debugPort);
                 }
             }
 
@@ -9817,6 +9909,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             void IV8SplitProxyNative.V8Context_WriteIsolateHeapSnapshot(V8Context.Handle hContext, IntPtr pStream)
             {
                 V8Context_WriteIsolateHeapSnapshot(hContext, pStream);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseHookEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseHookEnabled(hContext, enabled);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseRejectionCallbackEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseRejectionCallbackEnabled(hContext, enabled);
             }
 
             #endregion
@@ -10488,6 +10590,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             [DllImport("ClearScriptV8.linux-arm64.so", CallingConvention = CallingConvention.StdCall)]
             private static extern V8Context.Handle V8Isolate_CreateContext(
                 [In] V8Isolate.Handle hIsolate,
+                [In] IntPtr pEngine,
                 [In] StdString.Ptr pName,
                 [In] V8ScriptEngineFlags flags,
                 [In] int debugPort
@@ -10934,6 +11037,18 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             private static extern void V8Context_WriteIsolateHeapSnapshot(
                 [In] V8Context.Handle hContext,
                 [In] IntPtr pStream
+            );
+
+            [DllImport("ClearScriptV8.linux-arm64.so", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseHookEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
+            );
+
+            [DllImport("ClearScriptV8.linux-arm64.so", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseRejectionCallbackEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
             );
 
             #endregion
@@ -11553,11 +11668,11 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 }
             }
 
-            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort)
+            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
             {
                 using (var nameScope = StdString.CreateScope(name))
                 {
-                    return V8Isolate_CreateContext(hIsolate, nameScope.Value, flags, debugPort);
+                    return V8Isolate_CreateContext(hIsolate, pEngine, nameScope.Value, flags, debugPort);
                 }
             }
 
@@ -12024,6 +12139,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             void IV8SplitProxyNative.V8Context_WriteIsolateHeapSnapshot(V8Context.Handle hContext, IntPtr pStream)
             {
                 V8Context_WriteIsolateHeapSnapshot(hContext, pStream);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseHookEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseHookEnabled(hContext, enabled);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseRejectionCallbackEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseRejectionCallbackEnabled(hContext, enabled);
             }
 
             #endregion
@@ -12695,6 +12820,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             [DllImport("ClearScriptV8.linux-arm.so", CallingConvention = CallingConvention.StdCall)]
             private static extern V8Context.Handle V8Isolate_CreateContext(
                 [In] V8Isolate.Handle hIsolate,
+                [In] IntPtr pEngine,
                 [In] StdString.Ptr pName,
                 [In] V8ScriptEngineFlags flags,
                 [In] int debugPort
@@ -13141,6 +13267,18 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             private static extern void V8Context_WriteIsolateHeapSnapshot(
                 [In] V8Context.Handle hContext,
                 [In] IntPtr pStream
+            );
+
+            [DllImport("ClearScriptV8.linux-arm.so", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseHookEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
+            );
+
+            [DllImport("ClearScriptV8.linux-arm.so", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseRejectionCallbackEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
             );
 
             #endregion
@@ -13760,11 +13898,11 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 }
             }
 
-            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort)
+            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
             {
                 using (var nameScope = StdString.CreateScope(name))
                 {
-                    return V8Isolate_CreateContext(hIsolate, nameScope.Value, flags, debugPort);
+                    return V8Isolate_CreateContext(hIsolate, pEngine, nameScope.Value, flags, debugPort);
                 }
             }
 
@@ -14231,6 +14369,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             void IV8SplitProxyNative.V8Context_WriteIsolateHeapSnapshot(V8Context.Handle hContext, IntPtr pStream)
             {
                 V8Context_WriteIsolateHeapSnapshot(hContext, pStream);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseHookEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseHookEnabled(hContext, enabled);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseRejectionCallbackEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseRejectionCallbackEnabled(hContext, enabled);
             }
 
             #endregion
@@ -14902,6 +15050,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             [DllImport("ClearScriptV8.osx-x64.dylib", CallingConvention = CallingConvention.StdCall)]
             private static extern V8Context.Handle V8Isolate_CreateContext(
                 [In] V8Isolate.Handle hIsolate,
+                [In] IntPtr pEngine,
                 [In] StdString.Ptr pName,
                 [In] V8ScriptEngineFlags flags,
                 [In] int debugPort
@@ -15348,6 +15497,18 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             private static extern void V8Context_WriteIsolateHeapSnapshot(
                 [In] V8Context.Handle hContext,
                 [In] IntPtr pStream
+            );
+
+            [DllImport("ClearScriptV8.osx-x64.dylib", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseHookEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
+            );
+
+            [DllImport("ClearScriptV8.osx-x64.dylib", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseRejectionCallbackEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
             );
 
             #endregion
@@ -15967,11 +16128,11 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 }
             }
 
-            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, string name, V8ScriptEngineFlags flags, int debugPort)
+            V8Context.Handle IV8SplitProxyNative.V8Isolate_CreateContext(V8Isolate.Handle hIsolate, IntPtr pEngine, string name, V8ScriptEngineFlags flags, int debugPort)
             {
                 using (var nameScope = StdString.CreateScope(name))
                 {
-                    return V8Isolate_CreateContext(hIsolate, nameScope.Value, flags, debugPort);
+                    return V8Isolate_CreateContext(hIsolate, pEngine, nameScope.Value, flags, debugPort);
                 }
             }
 
@@ -16438,6 +16599,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             void IV8SplitProxyNative.V8Context_WriteIsolateHeapSnapshot(V8Context.Handle hContext, IntPtr pStream)
             {
                 V8Context_WriteIsolateHeapSnapshot(hContext, pStream);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseHookEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseHookEnabled(hContext, enabled);
+            }
+
+            void IV8SplitProxyNative.V8Context_SetPromiseRejectionCallbackEnabled(V8Context.Handle hContext, bool enabled)
+            {
+                V8Context_SetPromiseRejectionCallbackEnabled(hContext, enabled);
             }
 
             #endregion
@@ -17109,6 +17280,7 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             [DllImport("ClearScriptV8.osx-arm64.dylib", CallingConvention = CallingConvention.StdCall)]
             private static extern V8Context.Handle V8Isolate_CreateContext(
                 [In] V8Isolate.Handle hIsolate,
+                [In] IntPtr pEngine,
                 [In] StdString.Ptr pName,
                 [In] V8ScriptEngineFlags flags,
                 [In] int debugPort
@@ -17555,6 +17727,18 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             private static extern void V8Context_WriteIsolateHeapSnapshot(
                 [In] V8Context.Handle hContext,
                 [In] IntPtr pStream
+            );
+
+            [DllImport("ClearScriptV8.osx-arm64.dylib", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseHookEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
+            );
+
+            [DllImport("ClearScriptV8.osx-arm64.dylib", CallingConvention = CallingConvention.StdCall)]
+            private static extern void V8Context_SetPromiseRejectionCallbackEnabled(
+                [In] V8Context.Handle hContext,
+                [In] [MarshalAs(UnmanagedType.I1)] bool enabled
             );
 
             #endregion

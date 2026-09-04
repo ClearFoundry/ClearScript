@@ -45,7 +45,7 @@ namespace Microsoft.ClearScript.JavaScript
         /// Indicates that the object is a
         /// <see href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">promise</see>
         /// that is not yet settled. If the object is a promise and this attribute is not present,
-        /// then the promise is fulfilled unless <c><see cref="Rejected"/></c> is present.
+        /// then the promise is resolved unless <c><see cref="Rejected"/></c> is present.
         /// </summary>
         Pending = 0x00000008,
 

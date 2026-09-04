@@ -16,14 +16,14 @@ namespace Microsoft.ClearScript.V8
     {
         #region host object lifetime
 
-        public static IntPtr AddRefHostObject(IntPtr pObject)
+        public static IntPtr AddRefHostObject(IntPtr pObject, bool weak = false)
         {
-            return AddRefHostObject(GetHostObject(pObject));
+            return AddRefHostObject(GetHostObject(pObject), weak);
         }
 
-        public static IntPtr AddRefHostObject(object obj)
+        public static IntPtr AddRefHostObject(object obj, bool weak = false)
         {
-            return GCHandle.ToIntPtr(GCHandle.Alloc(obj));
+            return GCHandle.ToIntPtr(GCHandle.Alloc(obj, weak ? GCHandleType.Weak : GCHandleType.Normal));
         }
 
         public static void ReleaseHostObject(IntPtr pObject)

@@ -55,6 +55,9 @@ namespace Microsoft.ClearScript.V8
         private CommonJSManager commonJSManager;
         private JsonModuleManager jsonDocumentManager;
 
+        private V8PromiseHook promiseHook;
+        private V8PromiseRejectionCallback promiseRejectionCallback;
+
         #endregion
 
         #region constructors
@@ -232,7 +235,7 @@ namespace Microsoft.ClearScript.V8
             HostItemCollateral = runtime.HostItemCollateral;
 
             Flags = flags;
-            proxy = V8ContextProxy.Create(runtime.IsolateProxy, Name, flags, debugPort);
+            proxy = V8ContextProxy.Create(runtime.IsolateProxy, V8ProxyHelpers.AddRefHostObject(this, true), Name, flags, debugPort);
             script = (V8ScriptItem)GetRootItem();
 
             if (flags.HasAllFlags(V8ScriptEngineFlags.EnableStringifyEnhancements))
@@ -459,6 +462,56 @@ namespace Microsoft.ClearScript.V8
                     default:
                         throw new ArgumentException(MiscHelpers.FormatInvariant("Invalid {0} value", nameof(V8RuntimeViolationPolicy)), nameof(value));
                 }
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a callback for <see href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">promise</see> lifecycle events.
+        /// </summary>
+        public V8PromiseHook PromiseHook
+        {
+            get
+            {
+                VerifyNotDisposed();
+                return promiseHook;
+            }
+
+            set
+            {
+                VerifyNotDisposed();
+                ScriptInvoke(
+                    static ctx =>
+                    {
+                        ctx.self.promiseHook = ctx.value;
+                        ctx.self.proxy.SetPromiseHookEnabled(ctx.value is not null);
+                    },
+                    (self: this, value)
+                );
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets a callback for <see href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise">promise</see> rejection events.
+        /// </summary>
+        public V8PromiseRejectionCallback PromiseRejectionCallback
+        {
+            get
+            {
+                VerifyNotDisposed();
+                return promiseRejectionCallback;
+            }
+
+            set
+            {
+                VerifyNotDisposed();
+                ScriptInvoke(
+                    static ctx =>
+                    {
+                        ctx.self.promiseRejectionCallback = ctx.value;
+                        ctx.self.proxy.SetPromiseRejectionCallbackEnabled(ctx.value is not null);
+                    },
+                    (self: this, value)
+                );
             }
         }
 

@@ -86,7 +86,11 @@
     V8_SPLIT_PROXY_MANAGED_METHOD(int32_t, CreateModuleContext, void* pvDocumentInfo, std::vector<StdString>& names, std::vector<V8Value>& values) \
     \
     V8_SPLIT_PROXY_MANAGED_METHOD(void, WriteBytesToStream, void* pvStream, const uint8_t* pBytes, int32_t count) \
-    V8_SPLIT_PROXY_MANAGED_METHOD(V8GlobalFlags, GetGlobalFlags)
+    V8_SPLIT_PROXY_MANAGED_METHOD(V8GlobalFlags, GetGlobalFlags) \
+    V8_SPLIT_PROXY_MANAGED_METHOD(uint32_t, GetDefaultStackSize) \
+    \
+    V8_SPLIT_PROXY_MANAGED_METHOD(void, InvokePromiseHook, void* pvEngine, V8Context::PromiseEventKind kind, const V8Value::Decoded& promise, const V8Value::Decoded& parent) \
+    V8_SPLIT_PROXY_MANAGED_METHOD(void, InvokePromiseRejectionCallback, void* pvEngine, V8Context::PromiseRejectionEventKind kind, const V8Value::Decoded& promise, const V8Value::Decoded& value)
 
 //-----------------------------------------------------------------------------
 // V8SplitProxyManaged

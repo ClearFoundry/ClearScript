@@ -312,10 +312,7 @@ namespace Microsoft.ClearScript.V8
 
         public override ScriptEngine Engine => engine;
 
-        public override object Unwrap()
-        {
-            return target;
-        }
+        public override object Unwrap() => target;
 
         #endregion
 

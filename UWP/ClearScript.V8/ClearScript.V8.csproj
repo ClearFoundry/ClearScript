@@ -115,6 +115,8 @@
     <Compile Include="..\..\ClearScript\V8\V8GlobalFlags.cs" Link="V8\V8GlobalFlags.cs" />
     <Compile Include="..\..\ClearScript\V8\V8RuntimeViolationPolicy.cs" Link="V8\V8RuntimeViolationPolicy.cs" />
     <Compile Include="..\..\ClearScript\V8\V8IsolateProxy.cs" Link="V8\V8IsolateProxy.cs" />
+    <Compile Include="..\..\ClearScript\V8\V8PromiseHook.cs" Link="V8\V8PromiseHook.cs" />
+    <Compile Include="..\..\ClearScript\V8\V8PromiseRejectionCallback.cs" Link="V8\V8PromiseRejectionCallback.cs" />
     <Compile Include="..\..\ClearScript\V8\V8Proxy.cs" Link="V8\V8Proxy.cs" />
     <Compile Include="..\..\ClearScript\V8\V8Proxy.NetStandard.cs" Link="V8\V8Proxy.NetStandard.cs" />
     <Compile Include="..\..\ClearScript\V8\V8ProxyHelpers.cs" Link="V8\V8ProxyHelpers.cs" />

@@ -614,7 +614,7 @@ namespace Microsoft.ClearScript.Util
 
         public static string GetLocalDataRootPath(string basePath)
         {
-            var path = Path.Combine(basePath, "Microsoft", "ClearScript", ClearScriptVersion.Triad, Environment.Is64BitProcess ? "x64" : "x86");
+            var path = Path.Combine(basePath, "Microsoft", "ClearScript", ClearScriptVersion.Normal, Environment.Is64BitProcess ? "x64" : "x86");
 
             if (Try(out var fullPath, () => Path.GetFullPath(path)))
             {

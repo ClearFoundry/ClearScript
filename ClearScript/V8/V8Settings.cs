@@ -41,5 +41,16 @@ namespace Microsoft.ClearScript.V8
         /// reassignment will have no effect.
         /// </remarks>
         public static V8GlobalFlags GlobalFlags { get; set; }
+
+        /// <summary>
+        /// Gets or sets the default size of V8's stack region in
+        /// <see href="http://en.wikipedia.org/wiki/Kibibyte">KiB</see>.
+        /// </summary>
+        /// <remarks>
+        /// To override the default size of the stack region, set this property before instantiating
+        /// <c><see cref="V8ScriptEngine"/></c> or <c><see cref="V8Runtime"/></c> for the first time. Subsequent
+        /// reassignment will have no effect.
+        /// </remarks>
+        public static uint DefaultStackSize { get; set; }
     }
 }

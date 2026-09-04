@@ -435,6 +435,25 @@ namespace Microsoft.ClearScript.V8.SplitProxy
         [UnmanagedFunctionPointer(CallingConvention.StdCall)]
         private delegate V8GlobalFlags RawGetGlobalFlags();
 
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate uint RawGetDefaultStackSize();
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void RawInvokePromiseHook(
+            [In] IntPtr pEngine,
+            [In] V8PromiseEventKind kind,
+            [In] V8Value.Decoded.Ptr pPromise,
+            [In] V8Value.Decoded.Ptr pParent
+        );
+
+        [UnmanagedFunctionPointer(CallingConvention.StdCall)]
+        private delegate void RawInvokePromiseRejectionCallback(
+            [In] IntPtr pEngine,
+            [In] V8PromiseRejectionEventKind kind,
+            [In] V8Value.Decoded.Ptr pPromise,
+            [In] V8Value.Decoded.Ptr pValue
+        );
+
         // ReSharper restore UnusedType.Local
 
         #endregion
@@ -572,7 +591,16 @@ namespace Microsoft.ClearScript.V8.SplitProxy
                 GetMethodPair<RawLoadModule>(LoadModule),
                 GetMethodPair<RawCreateModuleContext>(CreateModuleContext),
                 GetMethodPair<RawWriteBytesToStream>(WriteBytesToStream),
-                GetMethodPair<RawGetGlobalFlags>(GetGlobalFlags)
+                GetMethodPair<RawGetGlobalFlags>(GetGlobalFlags),
+                GetMethodPair<RawGetDefaultStackSize>(GetDefaultStackSize),
+
+            #if NET5_0_OR_GREATER
+                (IntPtr.Zero, InvokePromiseHookFastMethodPtr),
+                (IntPtr.Zero, InvokePromiseRejectionCallbackFastMethodPtr),
+            #else
+                GetMethodPair<RawInvokePromiseHook>(InvokePromiseHook),
+                GetMethodPair<RawInvokePromiseRejectionCallback>(InvokePromiseRejectionCallback)
+            #endif
             };
 
             methodCount = methodPairs.Length;
@@ -1256,6 +1284,45 @@ namespace Microsoft.ClearScript.V8.SplitProxy
         private static V8GlobalFlags GetGlobalFlags()
         {
             return V8Settings.GlobalFlags;
+        }
+
+        private static uint GetDefaultStackSize()
+        {
+            return V8Settings.DefaultStackSize;
+        }
+
+        private static void InvokePromiseHook(IntPtr pEngine, V8PromiseEventKind kind, V8Value.Decoded.Ptr pPromise, V8Value.Decoded.Ptr pParent)
+        {
+            if (GCHandle.FromIntPtr(pEngine).Target is V8ScriptEngine engine)
+            {
+                var rawPromise = V8Value.Decoded.Get(pPromise, 0);
+                var rawParent = V8Value.Decoded.Get(pParent, 0);
+
+                var hook = engine.PromiseHook;
+                if ((hook is not null) && (rawPromise is IV8Object { IsPromise: true } v8Promise))
+                {
+                    var promise = (ScriptObject)V8ScriptItem.Wrap(engine, v8Promise);
+                    var parent = (rawParent is IV8Object { IsPromise: true } v8Parent) ? (ScriptObject)V8ScriptItem.Wrap(engine, v8Parent) : null;
+                    hook(kind, promise, parent);
+                }
+            }
+        }
+
+        private static void InvokePromiseRejectionCallback(IntPtr pEngine, V8PromiseRejectionEventKind kind, V8Value.Decoded.Ptr pPromise, V8Value.Decoded.Ptr pValue)
+        {
+            if (GCHandle.FromIntPtr(pEngine).Target is V8ScriptEngine engine)
+            {
+                var rawPromise = V8Value.Decoded.Get(pPromise, 0);
+                var rawValue = V8Value.Decoded.Get(pValue, 0);
+
+                var callback = engine.PromiseRejectionCallback;
+                if ((callback is not null) && (rawPromise is IV8Object { IsPromise: true } v8Promise))
+                {
+                    var promise = (ScriptObject)V8ScriptItem.Wrap(engine, v8Promise);
+                    var value = (rawValue is IV8Object { IsPromise: true } v8PromiseValue) ? V8ScriptItem.Wrap(engine, v8PromiseValue) : engine.MarshalToHost(rawValue, false);
+                    callback(kind, promise, value);
+                }
+            }
         }
 
         #endregion

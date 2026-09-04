@@ -62,8 +62,9 @@ void V8Platform::EnsureInitialized()
         v8::V8::InitializePlatform(&ms_Instance);
 
         m_GlobalFlags = V8_SPLIT_PROXY_MANAGED_INVOKE_NOTHROW(V8GlobalFlags, GetGlobalFlags);
-        std::vector<std::string> flagStrings;
+        auto defaultStackSize = V8_SPLIT_PROXY_MANAGED_INVOKE_NOTHROW(uint32_t, GetDefaultStackSize);
 
+        std::vector<std::string> flagStrings;
         flagStrings.push_back("--no_memory_pool_share_memory_on_teardown");
 
     #ifdef CLEARSCRIPT_TOP_LEVEL_AWAIT_CONTROL
@@ -88,6 +89,11 @@ void V8Platform::EnsureInitialized()
         if (!::HasFlag(m_GlobalFlags, V8GlobalFlags::DisableExplicitResourceManagement))
         {
             flagStrings.push_back("--js_explicit_resource_management");
+        }
+
+        if ((defaultStackSize > 0) && (defaultStackSize <= INT_MAX))
+        {
+            flagStrings.push_back("--stack_size=" + std::to_string(defaultStackSize));
         }
 
         if (!flagStrings.empty())
@@ -454,22 +460,11 @@ void V8OutputStream::EndOfStream()
         IGNORE_UNUSED(t_IsolateScope); \
     }
 
-#define BEGIN_PROMISE_HOOK_SCOPE \
-    { \
-        DISABLE_WARNING(4456) /* declaration hides previous local declaration */ \
-        PromiseHookScope t_PromiseHookScope(*this); \
-        DEFAULT_WARNING(4456)
-
-#define END_PROMISE_HOOK_SCOPE \
-        IGNORE_UNUSED(t_PromiseHookScope); \
-    }
-
 //-----------------------------------------------------------------------------
 
 static std::atomic<size_t> s_InstanceCount(0);
 static const int s_ContextGroupId = 1;
 static const size_t s_StackBreathingRoom = static_cast<size_t>(16 * 1024);
-static size_t* const s_pMinStackLimit = reinterpret_cast<size_t*>(sizeof(size_t));
 
 //-----------------------------------------------------------------------------
 
@@ -492,6 +487,7 @@ V8IsolateImpl::V8IsolateImpl(const StdString& name, const v8::ResourceConstraint
     m_IsExecutionTerminating(false),
     m_pExecutionScope(nullptr),
     m_pDocumentInfo(nullptr),
+    m_InternalPromiseHookEnabled(false),
     m_IsOutOfMemory(false),
     m_Released(false)
 {
@@ -517,6 +513,8 @@ V8IsolateImpl::V8IsolateImpl(const StdString& name, const v8::ResourceConstraint
 
         BEGIN_ISOLATE_SCOPE
 
+            m_upIsolate->SetPromiseHook(PromiseHook);
+            m_upIsolate->SetPromiseRejectCallback(PromiseRejectionCallback);
             m_upIsolate->SetCaptureStackTraceForUncaughtExceptions(true, 64, v8::StackTrace::kDetailed);
 
             m_hHostObjectHolderKey = CreatePersistent(CreatePrivate());
@@ -1662,6 +1660,8 @@ V8IsolateImpl::~V8IsolateImpl()
 
     m_upIsolate->SetHostImportModuleDynamicallyCallback(static_cast<v8::HostImportModuleDynamicallyCallback>(nullptr));
     m_upIsolate->SetHostInitializeImportMetaObjectCallback(nullptr);
+    m_upIsolate->SetPromiseRejectCallback(nullptr);
+    m_upIsolate->SetPromiseHook(nullptr);
 
     m_upIsolate->RemoveBeforeCallEnteredCallback(OnBeforeCallEntered);
     m_upIsolate->RemoveNearHeapLimitCallback(HeapExpansionCallback, 0);
@@ -1766,12 +1766,12 @@ void V8IsolateImpl::ProcessCallWithLockQueue(v8::Isolate* /*pIsolate*/, void* pv
 
 void V8IsolateImpl::ProcessCallWithLockQueue()
 {
-    BEGIN_PROMISE_HOOK_SCOPE
+    BEGIN_PULSE_VALUE_SCOPE(&m_InternalPromiseHookEnabled, true)
 
         std::unique_lock<std::mutex> lock(m_DataMutex.GetImpl());
         ProcessCallWithLockQueue(lock);
 
-    END_PROMISE_HOOK_SCOPE
+    END_PULSE_VALUE_SCOPE
 }
 
 //-----------------------------------------------------------------------------
@@ -1924,10 +1924,10 @@ V8IsolateImpl::ExecutionScope* V8IsolateImpl::EnterExecutionScope(ExecutionScope
 
             // calculate stack address limit
             size_t* pStackLimit = pStackMarker - (maxStackUsage / sizeof(size_t));
-            if ((pStackLimit < s_pMinStackLimit) || (pStackLimit > pStackMarker))
+            if (pStackLimit > pStackMarker)
             {
-                // underflow; use minimum non-null stack address
-                pStackLimit = s_pMinStackLimit;
+                // underflow; use default (nonexistent) stack address limit
+                pStackLimit = nullptr;
             }
             else
             {
@@ -1936,8 +1936,7 @@ V8IsolateImpl::ExecutionScope* V8IsolateImpl::EnterExecutionScope(ExecutionScope
             }
 
             // set and record stack address limit
-            m_upIsolate->SetStackLimit(reinterpret_cast<uintptr_t>(pStackLimit));
-            m_pStackLimit = pStackLimit;
+            SetStackLimit(pStackLimit);
 
             // enter outermost stack usage monitoring scope
             m_StackWatchLevel = 1;
@@ -1983,12 +1982,7 @@ void V8IsolateImpl::ExitExecutionScope(ExecutionScope* pPreviousExecutionScope)
         if (--m_StackWatchLevel == 0)
         {
             // exited outermost scope; remove stack address limit
-            if (m_pStackLimit != nullptr)
-            {
-                // V8 has no API for removing a stack address limit
-                m_upIsolate->SetStackLimit(reinterpret_cast<uintptr_t>(s_pMinStackLimit));
-                m_pStackLimit = nullptr;
-            }
+            SetStackLimit(nullptr);
         }
     }
 
@@ -2153,6 +2147,25 @@ void V8IsolateImpl::CheckHeapSize(const std::optional<size_t>& optMaxHeapSize, b
 
 //-----------------------------------------------------------------------------
 
+void V8IsolateImpl::SetStackLimit(size_t* pLimit)
+{
+    if (m_pStackLimit != pLimit)
+    {
+        if (pLimit != nullptr)
+        {
+            m_upIsolate->SetStackLimit(reinterpret_cast<uintptr_t>(pLimit));
+        }
+        else
+        {
+            m_upIsolate->ResetStackLimit();
+        }
+
+        m_pStackLimit = pLimit;
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 void V8IsolateImpl::CollectGarbageInternal(bool exhaustive)
 {
     auto failuresRemaining = exhaustive ? 100 : 1;
@@ -2177,30 +2190,108 @@ void V8IsolateImpl::OnBeforeCallEntered()
 
 //-----------------------------------------------------------------------------
 
-void V8IsolateImpl::PromiseHook(v8::PromiseHookType type, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> /*hParent*/)
+void V8IsolateImpl::PromiseHook(v8::PromiseHookType type, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hParent)
 {
-    if ((type == v8::PromiseHookType::kResolve) && !hPromise.IsEmpty())
+    GetInstanceFromIsolate(v8::Isolate::GetCurrent())->PromiseHookWorker(type, hPromise, hParent);
+}
+
+//-----------------------------------------------------------------------------
+
+void V8IsolateImpl::PromiseHookWorker(v8::PromiseHookType type, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hParent)
+{
+    _ASSERTE(IsCurrent() && IsLocked());
+
+    if (!hPromise.IsEmpty())
     {
-        auto hContext = hPromise->GetCreationContext(v8::Isolate::GetCurrent()).FromMaybe(v8::Local<v8::Context>());
+        auto hContext = hPromise->GetCreationContext(m_upIsolate.get()).FromMaybe(v8::Local<v8::Context>());
         if (!hContext.IsEmpty())
         {
-            GetInstanceFromIsolate(v8::Isolate::GetCurrent())->FlushContextAsync(hContext);
+            for (auto& contextEntry : m_ContextEntries)
+            {
+                if (contextEntry.pContextImpl->GetContext() == hContext)
+                {
+                    if (m_InternalPromiseHookEnabled)
+                    {
+                        FlushContextAsync(contextEntry);
+                    }
+
+                    switch (type)
+                    {
+                        case v8::PromiseHookType::kInit:
+                            contextEntry.pContextImpl->InvokePromiseHook(V8Context::PromiseEventKind::Created, hPromise, hParent);
+                            break;
+
+                        case v8::PromiseHookType::kResolve:
+                            contextEntry.pContextImpl->InvokePromiseHook(V8Context::PromiseEventKind::Settled, hPromise, hParent);
+                            break;
+
+                        case v8::PromiseHookType::kBefore:
+                            contextEntry.pContextImpl->InvokePromiseHook(V8Context::PromiseEventKind::BeforeReaction, hPromise, hParent);
+                            break;
+
+                        case v8::PromiseHookType::kAfter:
+                            contextEntry.pContextImpl->InvokePromiseHook(V8Context::PromiseEventKind::AfterReaction, hPromise, hParent);
+                            break;
+
+                        default:
+                            break;
+                    }
+
+                    break;
+                }
+            }
         }
     }
 }
 
 //-----------------------------------------------------------------------------
 
-void V8IsolateImpl::FlushContextAsync(v8::Local<v8::Context> hContext)
+void V8IsolateImpl::PromiseRejectionCallback(v8::PromiseRejectMessage message)
+{
+    GetInstanceFromIsolate(v8::Isolate::GetCurrent())->PromiseRejectionCallbackWorker(message);
+}
+
+//-----------------------------------------------------------------------------
+
+void V8IsolateImpl::PromiseRejectionCallbackWorker(const v8::PromiseRejectMessage& message)
 {
     _ASSERTE(IsCurrent() && IsLocked());
 
-    for (auto& contextEntry : m_ContextEntries)
+    auto hPromise = message.GetPromise();
+    if (!hPromise.IsEmpty())
     {
-        if (contextEntry.pContextImpl->GetContext() == hContext)
+        auto hContext = hPromise->GetCreationContext(m_upIsolate.get()).FromMaybe(v8::Local<v8::Context>());
+        if (!hContext.IsEmpty())
         {
-            FlushContextAsync(contextEntry);
-            break;
+            for (auto& contextEntry : m_ContextEntries)
+            {
+                if (contextEntry.pContextImpl->GetContext() == hContext)
+                {
+                    switch (message.GetEvent())
+                    {
+                        case v8::kPromiseRejectWithNoHandler:
+                            contextEntry.pContextImpl->InvokePromiseRejectionCallback(V8Context::PromiseRejectionEventKind::RejectedWithoutHandler, hPromise, message.GetValue());
+                            break;
+
+                        case v8::kPromiseHandlerAddedAfterReject:
+                            contextEntry.pContextImpl->InvokePromiseRejectionCallback(V8Context::PromiseRejectionEventKind::HandlerAddedAfterRejection, hPromise, message.GetValue());
+                            break;
+
+                        case v8::kPromiseRejectAfterResolved:
+                            contextEntry.pContextImpl->InvokePromiseRejectionCallback(V8Context::PromiseRejectionEventKind::RejectedAfterSettlement, hPromise, message.GetValue());
+                            break;
+
+                        case v8::kPromiseResolveAfterResolved:
+                            contextEntry.pContextImpl->InvokePromiseRejectionCallback(V8Context::PromiseRejectionEventKind::ResolvedAfterSettlement, hPromise, message.GetValue());
+                            break;
+
+                        default:
+                            break;
+                    }
+
+                    break;
+                }
+            }
         }
     }
 }

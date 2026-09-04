@@ -770,7 +770,7 @@ NATIVE_ENTRY_POINT(V8IsolateHandle*) V8Isolate_Create(const StdString& name, int
 
 //-----------------------------------------------------------------------------
 
-NATIVE_ENTRY_POINT(V8ContextHandle*) V8Isolate_CreateContext(const V8IsolateHandle& handle, const StdString& name, V8Context::Flags flags, int32_t debugPort) noexcept
+NATIVE_ENTRY_POINT(V8ContextHandle*) V8Isolate_CreateContext(const V8IsolateHandle& handle, void* pvEngine, const StdString& name, V8Context::Flags flags, int32_t debugPort) noexcept
 {
     auto spIsolate = handle.GetEntity();
     if (!spIsolate.IsEmpty())
@@ -781,7 +781,7 @@ NATIVE_ENTRY_POINT(V8ContextHandle*) V8Isolate_CreateContext(const V8IsolateHand
 
         try
         {
-            return new V8ContextHandle(V8Context::Create(spIsolate, name, options));
+            return new V8ContextHandle(V8Context::Create(spIsolate, pvEngine, name, options));
         }
         catch (const V8Exception& exception)
         {
@@ -1696,6 +1696,28 @@ NATIVE_ENTRY_POINT(void) V8Context_WriteIsolateHeapSnapshot(const V8ContextHandl
     if (!spContext.IsEmpty())
     {
         spContext->WriteIsolateHeapSnapshot(pvStream);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+NATIVE_ENTRY_POINT(void) V8Context_SetPromiseHookEnabled(const V8ContextHandle& handle, StdBool enabled) noexcept
+{
+    auto spContext = handle.GetEntity();
+    if (!spContext.IsEmpty())
+    {
+        spContext->SetPromiseHookEnabled(enabled);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+NATIVE_ENTRY_POINT(void) V8Context_SetPromiseRejectionCallbackEnabled(const V8ContextHandle& handle, StdBool enabled) noexcept
+{
+    auto spContext = handle.GetEntity();
+    if (!spContext.IsEmpty())
+    {
+        spContext->SetPromiseRejectionCallbackEnabled(enabled);
     }
 }
 

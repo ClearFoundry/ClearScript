@@ -20,7 +20,7 @@ class V8ContextImpl final: public V8Context
 public:
 
     V8ContextImpl(V8IsolateImpl* pIsolateImpl, const StdString& name);
-    V8ContextImpl(SharedPtr<V8IsolateImpl>&& spIsolateImpl, const StdString& name, const Options& options);
+    V8ContextImpl(SharedPtr<V8IsolateImpl>&& spIsolateImpl, void* pvEngine, const StdString& name, const Options& options);
     static size_t GetInstanceCount();
 
     const StdString& GetName() const { return m_Name; }
@@ -73,6 +73,12 @@ public:
     virtual void SetCpuProfileSampleInterval(uint32_t value) override;
 
     virtual void WriteIsolateHeapSnapshot(void* pvStream) override;
+
+    virtual void SetPromiseHookEnabled(bool enabled) override;
+    virtual void InvokePromiseHook(PromiseEventKind kind, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hParent) override;
+
+    virtual void SetPromiseRejectionCallbackEnabled(bool enabled) override;
+    virtual void InvokePromiseRejectionCallback(PromiseRejectionEventKind kind, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hValue) override;
 
     virtual void Flush() override;
     virtual void Destroy() override;
@@ -534,6 +540,7 @@ private:
     void ThrowScriptException(const HostException& exception);
 
     StdString m_Name;
+    void* m_pvEngine;
     SharedPtr<V8IsolateImpl> m_spIsolateImpl;
     Persistent<v8::Context> m_hContext;
     std::vector<std::pair<StdString, Persistent<v8::Object>>> m_GlobalMembersStack;
@@ -575,6 +582,8 @@ private:
     bool m_ChangedTimerResolution;
     void* m_pvV8ObjectCache;
     double m_RelativeTimeOrigin;
+    std::atomic<bool> m_PromiseHookEnabled;
+    std::atomic<bool> m_PromiseRejectionCallbackEnabled;
 };
 
 //-----------------------------------------------------------------------------

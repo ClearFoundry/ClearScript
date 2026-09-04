@@ -376,20 +376,23 @@ static std::atomic<size_t> s_InstanceCount(0);
 //-----------------------------------------------------------------------------
 
 V8ContextImpl::V8ContextImpl(V8IsolateImpl* pIsolateImpl, const StdString& name):
-    V8ContextImpl(SharedPtr<V8IsolateImpl>(pIsolateImpl), name, Options())
+    V8ContextImpl(SharedPtr<V8IsolateImpl>(pIsolateImpl), nullptr, name, Options())
 {
 }
 
 //-----------------------------------------------------------------------------
 
-V8ContextImpl::V8ContextImpl(SharedPtr<V8IsolateImpl>&& spIsolateImpl, const StdString& name, const Options& options):
+V8ContextImpl::V8ContextImpl(SharedPtr<V8IsolateImpl>&& spIsolateImpl, void* pvEngine, const StdString& name, const Options& options):
     m_Name(name),
+    m_pvEngine(pvEngine),
     m_spIsolateImpl(std::move(spIsolateImpl)),
     m_DateTimeConversionEnabled(::HasFlag(options.Flags, Flags::EnableDateTimeConversion)),
     m_HideHostExceptions(::HasFlag(options.Flags, Flags::HideHostExceptions)),
     m_AllowHostObjectConstructorCall(false),
     m_ChangedTimerResolution(false),
-    m_pvV8ObjectCache(nullptr)
+    m_pvV8ObjectCache(nullptr),
+    m_PromiseHookEnabled(false),
+    m_PromiseRejectionCallbackEnabled(false)
 {
     VerifyNotOutOfMemory();
 
@@ -1525,6 +1528,56 @@ void V8ContextImpl::WriteIsolateHeapSnapshot(void* pvStream)
 
 //-----------------------------------------------------------------------------
 
+void V8ContextImpl::SetPromiseHookEnabled(bool enabled)
+{
+    m_PromiseHookEnabled = enabled;
+}
+
+//-----------------------------------------------------------------------------
+
+void V8ContextImpl::InvokePromiseHook(PromiseEventKind kind, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hParent)
+{
+    if (m_PromiseHookEnabled)
+    {
+        auto promise = ExportValue(hPromise);
+        V8Value::Decoded decodedPromise;
+        promise.Decode(decodedPromise);
+
+        auto parent = ExportValue(hParent);
+        V8Value::Decoded decodedParent;
+        parent.Decode(decodedParent);
+
+        V8_SPLIT_PROXY_MANAGED_INVOKE_VOID(InvokePromiseHook, m_pvEngine, kind, decodedPromise, decodedParent);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+void V8ContextImpl::SetPromiseRejectionCallbackEnabled(bool enabled)
+{
+    m_PromiseRejectionCallbackEnabled = enabled;
+}
+
+//-----------------------------------------------------------------------------
+
+void V8ContextImpl::InvokePromiseRejectionCallback(PromiseRejectionEventKind kind, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hValue)
+{
+    if (m_PromiseRejectionCallbackEnabled)
+    {
+        auto promise = ExportValue(hPromise);
+        V8Value::Decoded decodedPromise;
+        promise.Decode(decodedPromise);
+
+        auto value = !hValue.IsEmpty() ? ExportValue(hValue) : V8Value(V8Value::Null);
+        V8Value::Decoded decodedValue;
+        value.Decode(decodedValue);
+
+        V8_SPLIT_PROXY_MANAGED_INVOKE_VOID(InvokePromiseRejectionCallback, m_pvEngine, kind, decodedPromise, decodedValue);
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 void V8ContextImpl::Flush()
 {
     BEGIN_CONTEXT_SCOPE
@@ -2312,6 +2365,12 @@ void V8ContextImpl::Teardown()
     {
         HighResolutionClock::RestoreTimerResolution();
         m_ChangedTimerResolution = false;
+    }
+
+    if (m_pvEngine != nullptr)
+    {
+        HostObjectUtil::Release(m_pvEngine);
+        m_pvEngine = nullptr;
     }
 }
 

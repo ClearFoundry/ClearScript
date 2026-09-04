@@ -29,9 +29,9 @@ namespace Microsoft.ClearScript.V8.SplitProxy
             ));
         }
 
-        public V8Context.Handle CreateContext(string name, V8ScriptEngineFlags flags, int debugPort)
+        public V8Context.Handle CreateContext(string name, IntPtr pEngine, V8ScriptEngineFlags flags, int debugPort)
         {
-            return V8SplitProxyNative.Invoke(static (instance, ctx) => instance.V8Isolate_CreateContext(ctx.Handle, ctx.name, ctx.flags, ctx.debugPort), (Handle, name, flags, debugPort));
+            return V8SplitProxyNative.Invoke(static (instance, ctx) => instance.V8Isolate_CreateContext(ctx.Handle, ctx.pEngine, ctx.name, ctx.flags, ctx.debugPort), (Handle, pEngine, name, flags, debugPort));
         }
 
         #region V8IsolateProxy overrides

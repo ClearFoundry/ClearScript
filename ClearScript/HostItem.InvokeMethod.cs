@@ -470,7 +470,7 @@ namespace Microsoft.ClearScript
             public static MethodBindResult Create(string name, BindingFlags bindFlags, object rawResult, HostTarget hostTarget, object[] args)
             {
                 var method = rawResult as MethodInfo;
-                if (method != null)
+                if (method is not null)
                 {
                     if (method.IsStatic && !bindFlags.HasAllFlags(BindingFlags.Static))
                     {
@@ -485,7 +485,7 @@ namespace Microsoft.ClearScript
 
             public static MethodBindResult CreateFailure(Func<Exception> exceptionFactory) => new(exceptionFactory);
 
-            public bool IsSuccess => method != null;
+            public bool IsSuccess => method is not null;
 
             public object RawResult => IsSuccess ? method : exceptionFactory;
 

@@ -34,6 +34,24 @@ public:
         EnableArrayConversion = 0x00010000
     };
 
+    enum class PromiseEventKind: int32_t
+    {
+        // IMPORTANT: maintain bitwise equivalence with managed enum V8.V8PromiseEventKind
+        Created,
+        Settled,
+        BeforeReaction,
+        AfterReaction
+    };
+
+    enum class PromiseRejectionEventKind: int32_t
+    {
+        // IMPORTANT: maintain bitwise equivalence with managed enum V8.V8PromiseRejectionEventKind
+        RejectedWithoutHandler,
+        HandlerAddedAfterRejection,
+        RejectedAfterSettlement,
+        ResolvedAfterSettlement
+    };
+
     struct Options final
     {
         Flags Flags = Flags::None;
@@ -47,7 +65,7 @@ public:
         size_t ModuleCacheSize = 0;
     };
 
-    static V8Context* Create(const SharedPtr<V8Isolate>& spIsolate, const StdString& name, const Options& options);
+    static V8Context* Create(const SharedPtr<V8Isolate>& spIsolate, void* pvEngine, const StdString& name, const Options& options);
     static size_t GetInstanceCount();
 
     virtual size_t GetMaxIsolateHeapSize() = 0;
@@ -100,6 +118,12 @@ public:
     virtual void SetCpuProfileSampleInterval(uint32_t value) = 0;
 
     virtual void WriteIsolateHeapSnapshot(void* pvStream) = 0;
+
+    virtual void SetPromiseHookEnabled(bool enabled) = 0;
+    virtual void InvokePromiseHook(PromiseEventKind kind, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hParent) = 0;
+
+    virtual void SetPromiseRejectionCallbackEnabled(bool enabled) = 0;
+    virtual void InvokePromiseRejectionCallback(PromiseRejectionEventKind kind, v8::Local<v8::Promise> hPromise, v8::Local<v8::Value> hValue) = 0;
 
     virtual void Flush() = 0;
     virtual void Destroy() = 0;

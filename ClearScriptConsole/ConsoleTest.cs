@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Reflection;
 using System.Threading;
 using Microsoft.ClearScript.JavaScript;
@@ -126,6 +127,25 @@ namespace Microsoft.ClearScript.Test
             for (var repetitions = 0; repetitions < 64; repetitions++)
             {
                 CreateArrayBufferLeak();
+            }
+        }
+
+        public static void V8ScriptEngine_DefaultStackSize(string size)
+        {
+            V8Settings.DefaultStackSize = uint.Parse(size);
+
+            using (var engine = new V8ScriptEngine())
+            {
+                var count = 0U;
+                engine.AddHostObject("BumpCount", new Action(() => ++count));
+                try
+                {
+                    engine.Execute("(function foo() { BumpCount(); foo(); })()");
+                }
+                catch
+                {
+                    Console.WriteLine(count);
+                }
             }
         }
 

@@ -22,11 +22,11 @@ namespace Microsoft.ClearScript.Test
 
         public static int Main(string[] args)
         {
-            if ((args.Length == 2) && (args[0] == "-t"))
+            if ((args.Length >= 2) && (args[0] == "-t"))
             {
                 try
                 {
-                    RunTest(args[1]);
+                    RunTest(args[1], args.Skip(2).ToArray());
                     return 0;
                 }
                 catch (TargetInvocationException exception) when (exception.InnerException is AssertInconclusiveException)
@@ -104,9 +104,9 @@ namespace Microsoft.ClearScript.Test
             }
         }
 
-        private static void RunTest(string name)
+        private static void RunTest(string name, string[] args)
         {
-            typeof(ConsoleTest).InvokeMember(name, BindingFlags.InvokeMethod, null, null, Enumerable.Empty<object>().ToArray());
+            typeof(ConsoleTest).InvokeMember(name, BindingFlags.InvokeMethod, null, null, args.Cast<object>().ToArray());
         }
     }
 }

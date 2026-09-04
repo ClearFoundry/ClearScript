@@ -41,6 +41,6 @@ using System.Runtime.InteropServices;
 [assembly: InternalsVisibleTo("<#= "ClearScriptTest" + publicKeySpec #>")]
 
 [assembly: ComVisible(false)]
-[assembly: AssemblyVersion("<#= version.ToString(3) #>")]
-[assembly: AssemblyFileVersion("<#= version.ToString(3) #>")]
-[assembly: AssemblyInformationalVersion("<#= version.ToString(3) + versionSuffix #>")]
+[assembly: AssemblyVersion("<#= versionInfo.Normal #>")]
+[assembly: AssemblyFileVersion("<#= versionInfo.Normal #>")]
+[assembly: AssemblyInformationalVersion("<#= versionInfo.Informational #>")]

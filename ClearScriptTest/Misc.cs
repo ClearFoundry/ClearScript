@@ -101,13 +101,20 @@ namespace Microsoft.ClearScript.Test
 
     public static partial class TestUtil
     {
-        public static void InvokeConsoleTest(string name)
+        public static string InvokeConsoleTest(string name, params object[] args)
         {
-            var startInfo = new ProcessStartInfo("ClearScriptConsole.exe", "-t " + name)
+            var processArgs = "-t " + name;
+            if (args.Length > 0)
+            {
+                processArgs += " " + string.Join(" ", args);
+            }
+
+            var startInfo = new ProcessStartInfo("ClearScriptConsole.exe", processArgs)
             {
                 WindowStyle = ProcessWindowStyle.Hidden,
                 UseShellExecute = false,
-                RedirectStandardError = true
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
             };
 
             using (var process = Process.Start(startInfo))
@@ -115,6 +122,7 @@ namespace Microsoft.ClearScript.Test
                 Assert.IsNotNull(process);
                 process.WaitForExit();
                 Assert.IsTrue(0 <= process.ExitCode, process.StandardError.ReadToEnd());
+                return process.StandardOutput.ReadToEnd();
             }
         }
 

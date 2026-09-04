@@ -1,5 +1,5 @@
 diff --git a/BUILD.gn b/BUILD.gn
-index a5c7d847781..c37ff57facc 100644
+index a5c7d847781..7302a8d6a72 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
 @@ -9,7 +9,6 @@ import("//build/config/coverage/coverage.gni")
@@ -20,7 +20,7 @@ index a5c7d847781..c37ff57facc 100644
  
    if (v8_current_cpu == "arm") {
 diff --git a/gni/v8.gni b/gni/v8.gni
-index b616a1f0abc..69b3a3f6344 100644
+index b616a1f0abc..4e7273e472a 100644
 --- a/gni/v8.gni
 +++ b/gni/v8.gni
 @@ -4,6 +4,7 @@
@@ -42,7 +42,7 @@ index b616a1f0abc..69b3a3f6344 100644
    cppgc_enable_young_generation = false
 diff --git a/include/ClearScript/polyfill.h b/include/ClearScript/polyfill.h
 new file mode 100644
-index 00000000000..3a55fc7f8bc
+index 00000000000..e3e6af20f16
 --- /dev/null
 +++ b/include/ClearScript/polyfill.h
 @@ -0,0 +1,49 @@
@@ -96,7 +96,7 @@ index 00000000000..3a55fc7f8bc
 +
 +#endif // INCLUDE_CLEARSCRIPT_POLYFILL_H_
 diff --git a/include/libplatform/libplatform.h b/include/libplatform/libplatform.h
-index 6a34f432410..88a81ab4c40 100644
+index 6a34f432410..58204c5f27c 100644
 --- a/include/libplatform/libplatform.h
 +++ b/include/libplatform/libplatform.h
 @@ -49,6 +49,8 @@ V8_PLATFORM_EXPORT std::unique_ptr<v8::Platform> NewDefaultPlatform(
@@ -109,7 +109,7 @@ index 6a34f432410..88a81ab4c40 100644
   * The same as NewDefaultPlatform but disables the worker thread pool.
   * It must be used with the --single-threaded V8 flag.
 diff --git a/include/v8-initialization.h b/include/v8-initialization.h
-index abcaec458a4..a945e005d74 100644
+index abcaec458a4..19bec593026 100644
 --- a/include/v8-initialization.h
 +++ b/include/v8-initialization.h
 @@ -159,6 +159,7 @@ class V8_EXPORT V8 {
@@ -121,7 +121,7 @@ index abcaec458a4..a945e005d74 100644
    /**
     * Initialize the ICU library bundled with V8. The embedder should only
 diff --git a/include/v8-internal.h b/include/v8-internal.h
-index 3828ddd7d00..dbeffb51cf9 100644
+index 3828ddd7d00..889ce5b1292 100644
 --- a/include/v8-internal.h
 +++ b/include/v8-internal.h
 @@ -20,6 +20,28 @@
@@ -153,8 +153,21 @@ index 3828ddd7d00..dbeffb51cf9 100644
  namespace v8 {
  
  class Array;
+diff --git a/include/v8-isolate.h b/include/v8-isolate.h
+index f7600a237f7..94dbc25f54a 100644
+--- a/include/v8-isolate.h
++++ b/include/v8-isolate.h
+@@ -1622,6 +1622,8 @@ class V8_EXPORT Isolate {
+    */
+   void SetStackLimit(uintptr_t stack_limit);
+ 
++  void ResetStackLimit();
++
+   /**
+    * Returns a memory range that can potentially contain jitted code. Code for
+    * V8's 'builtins' will not be in this range if embedded builtins is enabled.
 diff --git a/include/v8-source-location.h b/include/v8-source-location.h
-index 057273ad8ef..9354c4a36dc 100644
+index 057273ad8ef..5734389e46b 100644
 --- a/include/v8-source-location.h
 +++ b/include/v8-source-location.h
 @@ -6,7 +6,16 @@
@@ -176,7 +189,7 @@ index 057273ad8ef..9354c4a36dc 100644
  
  #include "v8config.h"  // NOLINT(build/include_directory)
 diff --git a/include/v8-template.h b/include/v8-template.h
-index ad6749ee09f..6dbf37bdea8 100644
+index ad6749ee09f..18d2c55a06b 100644
 --- a/include/v8-template.h
 +++ b/include/v8-template.h
 @@ -991,6 +991,9 @@ class V8_EXPORT ObjectTemplate : public Template {
@@ -190,7 +203,7 @@ index ad6749ee09f..6dbf37bdea8 100644
     * Support for TC39 "dynamic code brand checks" proposal.
     *
 diff --git a/include/v8config.h b/include/v8config.h
-index 1624183738d..733ea95a503 100644
+index 1624183738d..8f0f461a707 100644
 --- a/include/v8config.h
 +++ b/include/v8config.h
 @@ -600,7 +600,7 @@ path. Add it with -I<path> to the command line
@@ -203,7 +216,7 @@ index 1624183738d..733ea95a503 100644
  # define V8_PRESERVE_MOST /* NOT SUPPORTED */
  #endif
 diff --git a/src/api/api-natives.cc b/src/api/api-natives.cc
-index 80466c2e8f9..e0483580561 100644
+index 80466c2e8f9..4e67ef4fbd7 100644
 --- a/src/api/api-natives.cc
 +++ b/src/api/api-natives.cc
 @@ -345,6 +345,9 @@ MaybeHandle<JSObject> InstantiateObject(Isolate* isolate,
@@ -217,7 +230,7 @@ index 80466c2e8f9..e0483580561 100644
      // Keep prototypes in slow-mode. Let them be lazily turned fast later on.
      // TODO(dcarney): is this necessary?
 diff --git a/src/api/api.cc b/src/api/api.cc
-index 82bf5785579..fd2af70a962 100644
+index 82bf5785579..a68ef70798a 100644
 --- a/src/api/api.cc
 +++ b/src/api/api.cc
 @@ -1817,6 +1817,17 @@ void ObjectTemplate::SetImmutableProto() {
@@ -249,7 +262,20 @@ index 82bf5785579..fd2af70a962 100644
  bool v8::V8::InitializeICUDefaultLocation(const char* exec_path,
                                            const char* icu_data_file) {
    return i::InitializeICUDefaultLocation(exec_path, icu_data_file);
-@@ -12621,9 +12636,9 @@ TryToCopyAndConvertArrayToCppBuffer<CTypeInfoBuilder<double>::Build().GetId(),
+@@ -10767,6 +10782,12 @@ void Isolate::SetStackLimit(uintptr_t stack_limit) {
+   i_isolate->set_stack_size(base::Stack::GetStackStart() - stack_limit);
+ }
+ 
++void Isolate::ResetStackLimit() {
++  i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(this);
++  i_isolate->stack_guard()->ResetStackLimit();
++  i_isolate->set_stack_size(i::v8_flags.stack_size * i::KB);
++}
++
+ void Isolate::GetCodeRange(void** start, size_t* length_in_bytes) {
+   i::Isolate* i_isolate = reinterpret_cast<i::Isolate*>(this);
+   const base::AddressRegion& code_region = i_isolate->heap()->code_region();
+@@ -12621,9 +12642,9 @@ TryToCopyAndConvertArrayToCppBuffer<CTypeInfoBuilder<double>::Build().GetId(),
  
  std::string SourceLocation::ToString() const {
    if (!*this) return {};
@@ -263,7 +289,7 @@ index 82bf5785579..fd2af70a962 100644
  
  }  // namespace v8
 diff --git a/src/ast/ast.cc b/src/ast/ast.cc
-index 46c40e0979a..a7b6935cefd 100644
+index 46c40e0979a..3ba0211e1b7 100644
 --- a/src/ast/ast.cc
 +++ b/src/ast/ast.cc
 @@ -501,7 +501,7 @@ class PropertyDeduplicator {
@@ -288,7 +314,7 @@ index 46c40e0979a..a7b6935cefd 100644
                                            base::DefaultAllocationPolicy>>
        table_;
 diff --git a/src/base/functional/bind-internal.h b/src/base/functional/bind-internal.h
-index 160664af5dd..2fa94eca5af 100644
+index 160664af5dd..c476fd8f2f3 100644
 --- a/src/base/functional/bind-internal.h
 +++ b/src/base/functional/bind-internal.h
 @@ -120,6 +120,13 @@ BIND_INTERNAL_EXTRACT_CALLABLE_RUN_TYPE_WITH_QUALS(const noexcept);
@@ -306,7 +332,7 @@ index 160664af5dd..2fa94eca5af 100644
  // `ExtractCallableRunType<decltype([](int, char*) { return 0.1; })>` ->
  //     `double(int, char*)`.
 diff --git a/src/base/macros.h b/src/base/macros.h
-index da1a964d50d..9527d96935e 100644
+index da1a964d50d..2db05813798 100644
 --- a/src/base/macros.h
 +++ b/src/base/macros.h
 @@ -13,6 +13,15 @@
@@ -337,7 +363,7 @@ index da1a964d50d..9527d96935e 100644
                  "bit_cast must not be used on reference types");
    static_assert(
 diff --git a/src/base/memcopy.h b/src/base/memcopy.h
-index b1d8a36b4cf..e9ab91d476e 100644
+index b1d8a36b4cf..1b073390477 100644
 --- a/src/base/memcopy.h
 +++ b/src/base/memcopy.h
 @@ -8,6 +8,7 @@
@@ -349,7 +375,7 @@ index b1d8a36b4cf..e9ab91d476e 100644
  #include "include/v8config.h"
  #include "src/base/base-export.h"
 diff --git a/src/base/platform/platform.h b/src/base/platform/platform.h
-index af626fffc4a..1db7d03d21c 100644
+index af626fffc4a..17d5f410bc1 100644
 --- a/src/base/platform/platform.h
 +++ b/src/base/platform/platform.h
 @@ -52,6 +52,8 @@
@@ -362,7 +388,7 @@ index af626fffc4a..1db7d03d21c 100644
  #if V8_CC_MSVC && V8_HOST_ARCH_IA32
  // __readfsdword is supposed to be declared in intrin.h but it is missing from
 diff --git a/src/base/vector.h b/src/base/vector.h
-index 987e29cb64d..1b766af0680 100644
+index 987e29cb64d..f0d661fbe6e 100644
 --- a/src/base/vector.h
 +++ b/src/base/vector.h
 @@ -12,6 +12,7 @@
@@ -374,7 +400,7 @@ index 987e29cb64d..1b766af0680 100644
  #include "src/base/hashing.h"
  #include "src/base/logging.h"
 diff --git a/src/bigint/bigint.h b/src/bigint/bigint.h
-index 5c94a5e5385..c3334cdfa7a 100644
+index 5c94a5e5385..c137e238fcf 100644
 --- a/src/bigint/bigint.h
 +++ b/src/bigint/bigint.h
 @@ -10,8 +10,11 @@
@@ -390,7 +416,7 @@ index 5c94a5e5385..c3334cdfa7a 100644
  namespace bigint {
  
 diff --git a/src/codegen/code-stub-assembler.cc b/src/codegen/code-stub-assembler.cc
-index 4a5ceff083c..23552696f63 100644
+index 4a5ceff083c..eab8db74588 100644
 --- a/src/codegen/code-stub-assembler.cc
 +++ b/src/codegen/code-stub-assembler.cc
 @@ -2528,6 +2528,10 @@ TNode<Uint32T> CodeStubAssembler::LoadMapBitField3(TNode<Map> map) {
@@ -417,7 +443,7 @@ index 4a5ceff083c..23552696f63 100644
        Word32And(LoadMapBitField(map),
                  Int32Constant(Map::Bits1::IsCallableBit::kMask |
 diff --git a/src/codegen/code-stub-assembler.h b/src/codegen/code-stub-assembler.h
-index e20839cd698..e1d5d84d6ab 100644
+index e20839cd698..ab306b90391 100644
 --- a/src/codegen/code-stub-assembler.h
 +++ b/src/codegen/code-stub-assembler.h
 @@ -1439,6 +1439,8 @@ class V8_EXPORT_PRIVATE CodeStubAssembler
@@ -430,7 +456,7 @@ index e20839cd698..e1d5d84d6ab 100644
    TNode<Uint16T> LoadMapInstanceType(TNode<Map> map);
    // Load the ElementsKind of a map.
 diff --git a/src/diagnostics/unwinding-info-win64.cc b/src/diagnostics/unwinding-info-win64.cc
-index 1312609e5b6..2fc14899e1c 100644
+index 1312609e5b6..6040070edb6 100644
 --- a/src/diagnostics/unwinding-info-win64.cc
 +++ b/src/diagnostics/unwinding-info-win64.cc
 @@ -464,6 +464,14 @@ void InitUnwindingRecord(Record* record, size_t code_size_in_bytes) {
@@ -521,20 +547,38 @@ index 393b3d61174..2ab14bd6bb7 100644
  }
  
 diff --git a/src/execution/stack-guard.cc b/src/execution/stack-guard.cc
-index 80159a5766f..0211048ac7e 100644
+index 80159a5766f..933b8dec222 100644
 --- a/src/execution/stack-guard.cc
 +++ b/src/execution/stack-guard.cc
-@@ -249,6 +249,9 @@ void StackGuard::ThreadLocal::Initialize(Isolate* isolate,
-   const uintptr_t kLimitSize = v8_flags.stack_size * KB;
-   DCHECK_GT(base::Stack::GetStackStart(), kLimitSize);
-   uintptr_t limit = base::Stack::GetStackStart() - kLimitSize;
-+  if (base::Stack::GetStackStart() < kLimitSize) {
-+    limit = 0;
-+  }
+@@ -59,6 +59,16 @@ void StackGuard::SetStackLimit(uintptr_t limit) {
+                         SimulatorStack::JsLimitFromCLimit(isolate_, limit));
+ }
+ 
++void StackGuard::ResetStackLimit() {
++  SetStackLimit(DefaultStackLimit());
++}
++
++uintptr_t StackGuard::DefaultStackLimit() {
++  const uintptr_t kLimitSize = v8_flags.stack_size * KB;
++  DCHECK_GT(base::Stack::GetStackStart(), kLimitSize);
++  return (base::Stack::GetStackStart() <= kLimitSize) ? 0 : (base::Stack::GetStackStart() - kLimitSize);
++}
++
+ void StackGuard::SetStackLimitInternal(const ExecutionAccess& lock,
+                                        uintptr_t limit, uintptr_t jslimit) {
+   // If the current limits are special (e.g. due to a pending interrupt) then
+@@ -246,9 +256,7 @@ void StackGuard::FreeThreadResources() {
+ 
+ void StackGuard::ThreadLocal::Initialize(Isolate* isolate,
+                                          const ExecutionAccess& lock) {
+-  const uintptr_t kLimitSize = v8_flags.stack_size * KB;
+-  DCHECK_GT(base::Stack::GetStackStart(), kLimitSize);
+-  uintptr_t limit = base::Stack::GetStackStart() - kLimitSize;
++  uintptr_t limit = StackGuard::DefaultStackLimit();
    real_jslimit_ = SimulatorStack::JsLimitFromCLimit(isolate, limit);
    set_jslimit(SimulatorStack::JsLimitFromCLimit(isolate, limit));
  #ifdef USE_SIMULATOR
-@@ -397,6 +400,8 @@ Tagged<Object> StackGuard::HandleInterrupts(InterruptLevel level) {
+@@ -397,6 +405,8 @@ Tagged<Object> StackGuard::HandleInterrupts(InterruptLevel level) {
  
    isolate_->counters()->stack_interrupts()->Increment();
  
@@ -543,8 +587,23 @@ index 80159a5766f..0211048ac7e 100644
    return ReadOnlyRoots(isolate_).undefined_value();
  }
  
+diff --git a/src/execution/stack-guard.h b/src/execution/stack-guard.h
+index 29ac411a360..b822be10641 100644
+--- a/src/execution/stack-guard.h
++++ b/src/execution/stack-guard.h
+@@ -34,6 +34,10 @@ class V8_EXPORT_PRIVATE V8_NODISCARD StackGuard final {
+   // the simulator's stack instead of using {limit}.
+   void SetStackLimit(uintptr_t limit);
+ 
++  static uintptr_t DefaultStackLimit();
++
++  void ResetStackLimit();
++
+   // Try to compare and swap the given jslimit without the ExecutionAccess lock.
+   // Expects potential concurrent writes of the interrupt limit, and of the
+   // interrupt limit only.
 diff --git a/src/heap/cppgc/heap-object-header.h b/src/heap/cppgc/heap-object-header.h
-index 1d89bff0779..6004a4496bd 100644
+index 1d89bff0779..13cadd4913d 100644
 --- a/src/heap/cppgc/heap-object-header.h
 +++ b/src/heap/cppgc/heap-object-header.h
 @@ -354,7 +354,7 @@ uint16_t HeapObjectHeader::LoadEncoded() const {
@@ -557,7 +616,7 @@ index 1d89bff0779..6004a4496bd 100644
  
  template <AccessMode mode, HeapObjectHeader::EncodedHalf part,
 diff --git a/src/heap/factory.cc b/src/heap/factory.cc
-index 2102070df07..c88887679b9 100644
+index 2102070df07..d34dfc457fd 100644
 --- a/src/heap/factory.cc
 +++ b/src/heap/factory.cc
 @@ -2448,6 +2448,7 @@ Tagged<Map> Factory::InitializeMap(Tagged<Map> map, InstanceType type,
@@ -569,7 +628,7 @@ index 2102070df07..c88887679b9 100644
    map->init_prototype_and_constructor_or_back_pointer(roots);
    map->set_instance_size(instance_size);
 diff --git a/src/heap/setup-heap-internal.cc b/src/heap/setup-heap-internal.cc
-index 78d5cc73249..b528296ce39 100644
+index 78d5cc73249..3716933e7d6 100644
 --- a/src/heap/setup-heap-internal.cc
 +++ b/src/heap/setup-heap-internal.cc
 @@ -294,6 +294,7 @@ void InitializePartialMap(Isolate* isolate, Tagged<Map> map,
@@ -581,7 +640,7 @@ index 78d5cc73249..b528296ce39 100644
    map->clear_padding();
    map->set_elements_kind(TERMINAL_FAST_ELEMENTS_KIND);
 diff --git a/src/init/icu_util.cc b/src/init/icu_util.cc
-index f210b157032..b4327d37057 100644
+index f210b157032..1440e5e7f59 100644
 --- a/src/init/icu_util.cc
 +++ b/src/init/icu_util.cc
 @@ -11,6 +11,7 @@
@@ -620,7 +679,7 @@ index f210b157032..b4327d37057 100644
  #undef ICU_UTIL_DATA_STATIC
  
 diff --git a/src/init/icu_util.h b/src/init/icu_util.h
-index e127e75f10f..b0e4bd2d68e 100644
+index e127e75f10f..eba9b39d5c2 100644
 --- a/src/init/icu_util.h
 +++ b/src/init/icu_util.h
 @@ -5,6 +5,8 @@
@@ -653,7 +712,7 @@ index 381748382db..21034d17c53 100644
    platform_ = platform;
    v8::base::SetPrintStackTrace(platform_->GetStackTracePrinter());
 diff --git a/src/inspector/string-util.h b/src/inspector/string-util.h
-index 5607b6859c6..b5d5f35ea7d 100644
+index 5607b6859c6..4ae3944f063 100644
 --- a/src/inspector/string-util.h
 +++ b/src/inspector/string-util.h
 @@ -53,9 +53,9 @@ class V8_EXPORT Binary {
@@ -669,7 +728,7 @@ index 5607b6859c6..b5d5f35ea7d 100644
          std::make_shared<std::vector<uint8_t>>(span.begin(), span.end()));
    }
 diff --git a/src/inspector/v8-debugger-agent-impl.cc b/src/inspector/v8-debugger-agent-impl.cc
-index 2e78b588e85..e38e52be0de 100644
+index 2e78b588e85..bf5759eb9c9 100644
 --- a/src/inspector/v8-debugger-agent-impl.cc
 +++ b/src/inspector/v8-debugger-agent-impl.cc
 @@ -1252,7 +1252,7 @@ Response V8DebuggerAgentImpl::getScriptSource(
@@ -700,7 +759,7 @@ index 2e78b588e85..e38e52be0de 100644
  #else
    return Response::ServerError("WebAssembly is disabled");
 diff --git a/src/interpreter/bytecode-generator.cc b/src/interpreter/bytecode-generator.cc
-index 7ea2e55528c..baef89a0482 100644
+index 7ea2e55528c..f5700b3c278 100644
 --- a/src/interpreter/bytecode-generator.cc
 +++ b/src/interpreter/bytecode-generator.cc
 @@ -7671,6 +7671,8 @@ static bool IsCharU(const AstRawString* str) {
@@ -721,7 +780,7 @@ index 7ea2e55528c..baef89a0482 100644
      Literal* right_lit = expr->right()->AsLiteral();
  
 diff --git a/src/libplatform/default-platform.cc b/src/libplatform/default-platform.cc
-index 09ef613af85..8d395e548a4 100644
+index 09ef613af85..3ea6bc81039 100644
 --- a/src/libplatform/default-platform.cc
 +++ b/src/libplatform/default-platform.cc
 @@ -57,6 +57,10 @@ std::unique_ptr<v8::Platform> NewDefaultPlatform(
@@ -736,7 +795,7 @@ index 09ef613af85..8d395e548a4 100644
      IdleTaskSupport idle_task_support,
      InProcessStackDumping in_process_stack_dumping,
 diff --git a/src/objects/js-duration-format.cc b/src/objects/js-duration-format.cc
-index 1eca7ba66d8..66967676a5a 100644
+index 1eca7ba66d8..fba160ee3ff 100644
 --- a/src/objects/js-duration-format.cc
 +++ b/src/objects/js-duration-format.cc
 @@ -807,7 +807,7 @@ void OutputFractional(const char* type, int64_t integer, int32_t powerOfTen,
@@ -749,7 +808,7 @@ index 1eca7ba66d8..66967676a5a 100644
    UErrorCode status = U_ZERO_ERROR;
    // Use faster ICU API formatInt if the value fit the precision int64_t,
 diff --git a/src/objects/js-objects.cc b/src/objects/js-objects.cc
-index e5aa556d80d..734f0c1b66d 100644
+index e5aa556d80d..3bb6708cd70 100644
 --- a/src/objects/js-objects.cc
 +++ b/src/objects/js-objects.cc
 @@ -5470,6 +5470,14 @@ void JSObject::SetImmutableProto(Isolate* isolate,
@@ -768,7 +827,7 @@ index e5aa556d80d..734f0c1b66d 100644
                                          DirectHandle<JSObject> object,
                                          JavaScriptArguments* args,
 diff --git a/src/objects/js-objects.h b/src/objects/js-objects.h
-index 2ebc2019934..ff053197e55 100644
+index 2ebc2019934..12e54a7f4a5 100644
 --- a/src/objects/js-objects.h
 +++ b/src/objects/js-objects.h
 @@ -857,6 +857,9 @@ class JSObject : public TorqueGeneratedJSObject<JSObject, JSReceiver> {
@@ -782,7 +841,7 @@ index 2ebc2019934..ff053197e55 100644
    // the caller to initialize object header. Fill the pre-allocated fields with
    // undefined_value and the rest with filler_map.
 diff --git a/src/objects/map-inl.h b/src/objects/map-inl.h
-index 050748b7f3c..c47b4a2cdde 100644
+index 050748b7f3c..8344862775e 100644
 --- a/src/objects/map-inl.h
 +++ b/src/objects/map-inl.h
 @@ -157,6 +157,9 @@ BIT_FIELD_ACCESSORS(Map, bit_field3, may_have_interesting_properties,
@@ -796,7 +855,7 @@ index 050748b7f3c..c47b4a2cdde 100644
    DCHECK(has_named_interceptor());
    Tagged<FunctionTemplateInfo> info = GetFunctionTemplateInfo(cage_base);
 diff --git a/src/objects/map.cc b/src/objects/map.cc
-index 53b28c596be..0815fb7f6a9 100644
+index 53b28c596be..1082a5b78b8 100644
 --- a/src/objects/map.cc
 +++ b/src/objects/map.cc
 @@ -1298,6 +1298,7 @@ Handle<Map> Map::RawCopy(Isolate* isolate, DirectHandle<Map> src_handle,
@@ -822,7 +881,7 @@ index 53b28c596be..0815fb7f6a9 100644
  void EnsureInitialMap(Isolate* isolate, DirectHandle<Map> map) {
  #ifdef DEBUG
 diff --git a/src/objects/map.h b/src/objects/map.h
-index 31395ece2e2..df408cd14bc 100644
+index 31395ece2e2..03c238593d8 100644
 --- a/src/objects/map.h
 +++ b/src/objects/map.h
 @@ -367,6 +367,11 @@ class Map : public TorqueGeneratedMap<Map, HeapObject> {
@@ -857,7 +916,7 @@ index 31395ece2e2..df408cd14bc 100644
  
    class BodyDescriptor;
 diff --git a/src/objects/map.tq b/src/objects/map.tq
-index c4330bf5625..36e763f0b2d 100644
+index c4330bf5625..a9fb316dbd3 100644
 --- a/src/objects/map.tq
 +++ b/src/objects/map.tq
 @@ -34,6 +34,10 @@ bitfield struct MapBitFields3 extends uint32 {
@@ -883,7 +942,7 @@ index c4330bf5625..36e763f0b2d 100644
    prototype: JSReceiver|Null;
    constructor_or_back_pointer_or_native_context: Object;
 diff --git a/src/objects/objects.cc b/src/objects/objects.cc
-index 9da7dfdf5e6..138c0026b5a 100644
+index 9da7dfdf5e6..d13b9afd2fc 100644
 --- a/src/objects/objects.cc
 +++ b/src/objects/objects.cc
 @@ -1015,7 +1015,12 @@ Handle<String> Object::TypeOf(Isolate* isolate, DirectHandle<Object> object) {
@@ -901,7 +960,7 @@ index 9da7dfdf5e6..138c0026b5a 100644
  }
  
 diff --git a/src/objects/templates-inl.h b/src/objects/templates-inl.h
-index 407d5df1cd7..6a70d3a596c 100644
+index 407d5df1cd7..aa6161f2616 100644
 --- a/src/objects/templates-inl.h
 +++ b/src/objects/templates-inl.h
 @@ -254,6 +254,14 @@ void ObjectTemplateInfo::set_code_like(bool is_code_like) {
@@ -920,7 +979,7 @@ index 407d5df1cd7..6a70d3a596c 100644
    return IsTemplateFor(object->map());
  }
 diff --git a/src/objects/templates.h b/src/objects/templates.h
-index 2163d995a8e..dce2215299d 100644
+index 2163d995a8e..58e14b7cf03 100644
 --- a/src/objects/templates.h
 +++ b/src/objects/templates.h
 @@ -301,6 +301,7 @@ class ObjectTemplateInfo
@@ -932,7 +991,7 @@ index 2163d995a8e..dce2215299d 100644
    // Starting from given object template's constructor walk up the inheritance
    // chain till a function template that has an instance template is found.
 diff --git a/src/objects/templates.tq b/src/objects/templates.tq
-index 4668493d2b7..99ce72267c0 100644
+index 4668493d2b7..279951b10a5 100644
 --- a/src/objects/templates.tq
 +++ b/src/objects/templates.tq
 @@ -108,7 +108,8 @@ extern class FunctionTemplateInfo extends TemplateInfoWithProperties {
